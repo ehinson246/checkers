@@ -21,6 +21,14 @@ def generate_starting_position():
     for i in range(29, 33):
         board_position.append(10)
 
+def generate_empty_board():
+    for i in range(1, 5):
+        board_position.append(8)
+    for i in range(5, 29):
+        board_position.append(0)
+    for i in range(29, 33):
+        board_position.append(8)
+
 def DL_search(coordinate):
     n = coordinate
     row = math.ceil(n/4)
@@ -196,10 +204,53 @@ def find_red_simples():
                 red_simples.append(simple)
     return red_simples
 
-
-
-
-
+def DL_jump_search(jumper_coordinate):
+    occupied_squares = locate_occupied_squares()
+    jumper_value = get_square_value(jumper_coordinate)
+    jumper_color = jumper_value & 3
+    jumpee_coordinate = DL_search(jumper_coordinate)
+    jumpee_value = get_square_value(jumpee_coordinate)
+    jumpee_color = jumpee_value & 3
+    if jumpee_coordinate in occupied_squares and not (jumper_color & jumpee_color):
+        destination_coordinate = DL_search(jumpee_coordinate)
+        if destination_coordinate not in occupied_squares:
+            return (jumper_coordinate, jumpee_coordinate, destination_coordinate)
+        
+def DR_jump_search(jumper_coordinate):
+    occupied_squares = locate_occupied_squares()
+    jumper_value = get_square_value(jumper_coordinate)
+    jumper_color = jumper_value & 3
+    jumpee_coordinate = DR_search(jumper_coordinate)
+    jumpee_value = get_square_value(jumpee_coordinate)
+    jumpee_color = jumpee_value & 3
+    if jumpee_coordinate in occupied_squares and not (jumper_color & jumpee_color):
+        destination_coordinate = DR_search(jumpee_coordinate)
+        if destination_coordinate not in occupied_squares:
+            return (jumper_coordinate, jumpee_coordinate, destination_coordinate)
+        
+def UL_jump_search(jumper_coordinate):
+    occupied_squares = locate_occupied_squares()
+    jumper_value = get_square_value(jumper_coordinate)
+    jumper_color = jumper_value & 3
+    jumpee_coordinate = UL_search(jumper_coordinate)
+    jumpee_value = get_square_value(jumpee_coordinate)
+    jumpee_color = jumpee_value & 3
+    if jumpee_coordinate in occupied_squares and not (jumper_color & jumpee_color):
+        destination_coordinate = UL_search(jumpee_coordinate)
+        if destination_coordinate not in occupied_squares:
+            return (jumper_coordinate, jumpee_coordinate, destination_coordinate)
+        
+def UR_jump_search(jumper_coordinate):
+    occupied_squares = locate_occupied_squares()
+    jumper_value = get_square_value(jumper_coordinate)
+    jumper_color = jumper_value & 3
+    jumpee_coordinate = UR_search(jumper_coordinate)
+    jumpee_value = get_square_value(jumpee_coordinate)
+    jumpee_color = jumpee_value & 3
+    if jumpee_coordinate in occupied_squares and not (jumper_color & jumpee_color):
+        destination_coordinate = UR_search(jumpee_coordinate)
+        if destination_coordinate not in occupied_squares:
+            return (jumper_coordinate, jumpee_coordinate, destination_coordinate)
 
 
 
@@ -211,6 +262,19 @@ def find_red_simples():
 def find_jump_availability(coordinate_list):
     jump_availability = []
     return jump_availability
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def find_jumps(jump_availability):
     jumps = []
