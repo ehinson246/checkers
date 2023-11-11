@@ -15,4 +15,4 @@ This repository is where I keep all the files for my checkers engine. The goal i
 
 ---
 
-> **Note:** I am attempting to do as much of the problem solving on my own in terms of best practices for coding the ideal chess engine. (Eg. For finding jump moves for regular pieces, I know I can just create a binary tree since they only ever have two possible jump options at a time. When it comes to king pieces, though, I will attempt to create my own data structure and algorithm to find all possible jump moves since they can jump in four directions at a time.) However, I will obviously turn to the internet for help if I hit a wall.
+> **Note:** I am attempting to do as much of the problem solving on my own in terms of best practices for coding the ideal checkers engine. (Eg. For finding jump moves for regular pieces, I know I can just create a binary tree since they only ever have two possible jump options at a time. When it comes to king pieces, though, I will attempt to create my own data structure and algorithm to find all possible jump moves since they can jump in four directions at a time.) However, I will obviously turn to the internet for help if I hit a wall.
