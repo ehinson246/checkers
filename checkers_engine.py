@@ -3,6 +3,7 @@
 # empty = 0 (8), black man = 1 (9), red man = 2 (10), black king = 5 (13), red king = 6 (14)
 # king-maker sqaure: +8 ; become a king: +4
 # black moves down, red moves up
+# U = up, D = down, L = left, R = right (when used as prefixes for search functions)
 
 import math
 
@@ -141,55 +142,62 @@ def locate_kingmaker_squares():
            kingmaker_squares.append(coordinate)
     return kingmaker_squares
 
+def D_simple_search(coordinate):
+    simples = []
+    DL_coordinate = DL_search(coordinate)
+    DR_coordinate = DR_search(coordinate)
+    occupied_squares = locate_occupied_squares()
+    if DL_coordinate not in occupied_squares and DL_coordinate is not None:
+        simple = str(coordinate) + '-' + str(DL_coordinate)
+        simples.append(simple)
+    if DR_coordinate not in occupied_squares and DR_coordinate is not None:
+        simple = str(coordinate) + '-' + str(DR_coordinate)
+        simples.append(simple)
+    return simples
+
+def U_simple_search(coordinate):
+    simples = []
+    UL_coordinate = UL_search(coordinate)
+    UR_coordinate = UR_search(coordinate)
+    occupied_squares = locate_occupied_squares()
+    if UL_coordinate not in occupied_squares and UL_coordinate is not None:
+        simple = str(coordinate) + '-' + str(UL_coordinate)
+        simples.append(simple)
+    if UR_coordinate not in occupied_squares and UR_coordinate is not None:
+        simple = str(coordinate) + '-' + str(UR_coordinate)
+        simples.append(simple)
+    return simples
+
 def find_black_simples():
     black_pieces = locate_black_pieces()
     black_kings = locate_black_kings()
-    occupied_squares = locate_occupied_squares()
     black_simples = []
     for coordinate in black_pieces:
-        DL_coordinate = DL_search(coordinate)
-        DR_coordinate = DR_search(coordinate)
-        if DL_coordinate not in occupied_squares and DL_coordinate is not None:
-            simple = str(coordinate) + '-' + str(DL_coordinate)
-            black_simples.append(simple)
-        if DR_coordinate not in occupied_squares and DR_coordinate is not None:
-            simple = str(coordinate) + '-' + str(DR_coordinate)
+        D_simples = D_simple_search(coordinate)
+        for simple in D_simples:
             black_simples.append(simple)
         if coordinate in black_kings:
-            UL_coordinate = UL_search(coordinate)
-            UR_coordinate = UR_search(coordinate)
-            if UL_coordinate not in occupied_squares and UL_coordinate is not None:
-                simple = str(coordinate) + '-' + str(UL_coordinate)
-                black_simples.append(simple)
-            if UR_coordinate not in occupied_squares and UR_coordinate is not None:
-                simple = str(coordinate) + '-' + str(UR_coordinate)
-                black_simples.append(simple)      
+            U_simples = U_simple_search(coordinate)
+            for simple in U_simples:
+                black_simples.append(simple)   
     return black_simples
 
 def find_red_simples():
     red_pieces = locate_red_pieces()
     red_kings = locate_red_kings()
-    occupied_squares = locate_occupied_squares()
     red_simples = []
     for coordinate in red_pieces:
-        UL_coordinate = UL_search(coordinate)
-        UR_coordinate = UR_search(coordinate)
-        if UL_coordinate not in occupied_squares and UL_coordinate is not None:
-            simple = str(coordinate) + '-' + str(UL_coordinate)
-            red_simples.append(simple)
-        if UR_coordinate not in occupied_squares and UR_coordinate is not None:
-            simple = str(coordinate) + '-' + str(UR_coordinate)
+        U_simples = U_simple_search(coordinate)
+        for simple in U_simples:
             red_simples.append(simple)
         if coordinate in red_kings:
-            DL_coordinate = DL_search(coordinate)
-            DR_coordinate = DR_search(coordinate)
-            if DL_coordinate not in occupied_squares and DL_coordinate is not None:
-                simple = str(coordinate) + '-' + str(DL_coordinate)
-                red_simples.append(simple)
-            if DR_coordinate not in occupied_squares and DR_coordinate is not None:
-                simple = str(coordinate) + '-' + str(DR_coordinate)
+            D_simples = D_simple_search(coordinate)
+            for simple in D_simples:
                 red_simples.append(simple)
     return red_simples
+
+
+
 
 
 
