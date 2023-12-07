@@ -7,6 +7,7 @@
 
 import math
 import re
+import copy
 
 # BOARD GENERATION FUNCTIONS:
 
@@ -216,120 +217,397 @@ def find_red_simples():
                 red_simples.append(simple)
     return red_simples
 
-# JUMP SEARCH FUNCTIONS:
+# BASIC JUMP SEARCH FUNCTIONS:
 
-def DL_jump_search(jumper_coordinate):
+def DL_jump_search(jumper_coordinate, previous_color):
     occupied_squares = locate_occupied_squares()
     jumper_value = get_square_value(jumper_coordinate)
-    if jumper_value is not None:
+    if previous_color is None:
         jumper_color = jumper_value & 3
-        jumpee_coordinate = DL_search(jumper_coordinate)
-        jumpee_value = get_square_value(jumpee_coordinate)
+    else:
+        jumper_color = previous_color
+    jumpee_coordinate = DL_search(jumper_coordinate)
+    jumpee_value = get_square_value(jumpee_coordinate)
+    if jumpee_value is not None:
         jumpee_color = jumpee_value & 3
         if jumpee_coordinate in occupied_squares and not (jumper_color & jumpee_color):
             destination_coordinate = DL_search(jumpee_coordinate)
-            if destination_coordinate not in occupied_squares:
-                return (jumper_coordinate, jumpee_coordinate, destination_coordinate)
+            return (jumper_coordinate, jumpee_coordinate, destination_coordinate)
         
-def DR_jump_search(jumper_coordinate):
+def DR_jump_search(jumper_coordinate, previous_color):
     occupied_squares = locate_occupied_squares()
     jumper_value = get_square_value(jumper_coordinate)
-    if jumper_value is not None:
-        jumper_color = jumper_value & 3        
-        jumpee_coordinate = DR_search(jumper_coordinate)
-        jumpee_value = get_square_value(jumpee_coordinate)
+    if previous_color is None:
+        jumper_color = jumper_value & 3
+    else:
+        jumper_color = previous_color        
+    jumpee_coordinate = DR_search(jumper_coordinate)
+    jumpee_value = get_square_value(jumpee_coordinate)
+    if jumpee_value is not None:
         jumpee_color = jumpee_value & 3
         if jumpee_coordinate in occupied_squares and not (jumper_color & jumpee_color):
             destination_coordinate = DR_search(jumpee_coordinate)
-            if destination_coordinate not in occupied_squares:
-                return (jumper_coordinate, jumpee_coordinate, destination_coordinate)
+            return (jumper_coordinate, jumpee_coordinate, destination_coordinate)
         
-def UL_jump_search(jumper_coordinate):
+def UL_jump_search(jumper_coordinate, previous_color):
     occupied_squares = locate_occupied_squares()
     jumper_value = get_square_value(jumper_coordinate)
-    jumper_color = jumper_value & 3
+    if previous_color is None:
+        jumper_color = jumper_value & 3
+    else:
+        jumper_color = previous_color
     jumpee_coordinate = UL_search(jumper_coordinate)
     jumpee_value = get_square_value(jumpee_coordinate)
-    jumpee_color = jumpee_value & 3
-    if jumpee_coordinate in occupied_squares and not (jumper_color & jumpee_color):
-        destination_coordinate = UL_search(jumpee_coordinate)
-        if destination_coordinate not in occupied_squares:
+    if jumpee_value is not None:
+        jumpee_color = jumpee_value & 3
+        if jumpee_coordinate in occupied_squares and not (jumper_color & jumpee_color):
+            destination_coordinate = UL_search(jumpee_coordinate)
             return (jumper_coordinate, jumpee_coordinate, destination_coordinate)
         
-def UR_jump_search(jumper_coordinate):
+def UR_jump_search(jumper_coordinate, previous_color):
     occupied_squares = locate_occupied_squares()
     jumper_value = get_square_value(jumper_coordinate)
-    jumper_color = jumper_value & 3
+    if previous_color is None:
+        jumper_color = jumper_value & 3
+    else:
+        jumper_color = previous_color
     jumpee_coordinate = UR_search(jumper_coordinate)
     jumpee_value = get_square_value(jumpee_coordinate)
-    jumpee_color = jumpee_value & 3
-    if jumpee_coordinate in occupied_squares and not (jumper_color & jumpee_color):
-        destination_coordinate = UR_search(jumpee_coordinate)
-        if destination_coordinate not in occupied_squares:
+    if jumpee_value is not None:
+        jumpee_color = jumpee_value & 3
+        if jumpee_coordinate in occupied_squares and not (jumper_color & jumpee_color):
+            destination_coordinate = UR_search(jumpee_coordinate)
             return (jumper_coordinate, jumpee_coordinate, destination_coordinate)
 
-
-
-class PawnPath:
+# JUMP MOVE INITIALIZATION FUNCTIONS:
+        
+class Path:
     def __init__(self, start_coordinate, end_coordinate):
         self.start_coordinate = start_coordinate
         self.end_coordinate = end_coordinate
         self.captures = []
-    
+
     def record_capture(self, jumpee):
-        self.captures.append(jumpee)
+        if jumpee not in self.captures:
+            self.captures.append(jumpee)
     
     def __str__(self):
         return f"{self.start_coordinate}x{self.end_coordinate} {self.captures}"
 
+def create_Path_DL(jumper_coordinate, DL_jump_info, occupied_squares):
+    DL_jumpee = DL_jump_info[1]
+    DL_destination = DL_jump_info[2]
+    if DL_destination is not None:
+        if DL_destination not in occupied_squares:
+            Path_DL = Path(jumper_coordinate, DL_destination)
+            Path_DL.record_capture(DL_jumpee)
+            return Path_DL
 
+def create_Path_DR(jumper_coordinate, DR_jump_info, occupied_squares):
+    DR_jumpee = DR_jump_info[1]
+    DR_destination = DR_jump_info[2]
+    if DR_destination is not None:
+        if DR_destination not in occupied_squares:
+            Path_DR = Path(jumper_coordinate, DR_destination)
+            Path_DR.record_capture(DR_jumpee)
+            return Path_DR
 
-def find_single_black_pawn_jump_moves(jumper_coordinate):
-    DL_jump_info = DL_jump_search(jumper_coordinate)
-    DR_jump_info = DR_jump_search(jumper_coordinate)
-    input = []
+def create_Path_UL(jumper_coordinate, UL_jump_info, occupied_squares):
+    UL_jumpee = UL_jump_info[1]
+    UL_destination = UL_jump_info[2]
+    if UL_destination is not None:
+        if UL_destination not in occupied_squares:
+            Path_UL = Path(jumper_coordinate, UL_destination)
+            Path_UL.record_capture(UL_jumpee)
+            return Path_UL
+
+def create_Path_UR(jumper_coordinate, UR_jump_info, occupied_squares):
+    UR_jumpee = UR_jump_info[1]
+    UR_destination = UR_jump_info[2]
+    if UR_destination is not None:
+        if UR_destination not in occupied_squares:
+            Path_UR = Path(jumper_coordinate, UR_destination)
+            Path_UR.record_capture(UR_jumpee)
+            return Path_UR
+
+def create_initial_black_pawn_paths(jumper_coordinate):
+    occupied_squares = locate_occupied_squares()
+    initial_black_pawn_paths = []
+    DL_jump_info = DL_jump_search(jumper_coordinate, None)
+    DR_jump_info = DR_jump_search(jumper_coordinate, None)
     if DL_jump_info is not None:
-        Path_A = PawnPath(DL_jump_info[0], DL_jump_info[2])
-        Path_A.captures.append(DL_jump_info[1])
-        input.append(Path_A)
+        Path_DL = create_Path_DL(jumper_coordinate, DL_jump_info, occupied_squares)
+        initial_black_pawn_paths.append(Path_DL)
     if DR_jump_info is not None:
-        Path_B = PawnPath(DR_jump_info[0], DR_jump_info[2])
-        Path_B.captures.append(DR_jump_info[1]) 
-        input.append(Path_B)
-    output = []
-    while True:
-        for path in input:
-            New_Path_1 = path
-            if DL_jump_search(path.end_coordinate) is not None:
-                New_Path_1.captures.append(DL_jump_search(path.end_coordinate)[1])
-                New_Path_1.end_coordinate = DL_jump_search(path.end_coordinate)[2]
-                output.append(New_Path_1)
-            New_Path_2 = path
-            if DR_jump_search(path.end_coordinate) is not None:
-                New_Path_2.captures.append(DR_jump_search(path.end_coordinate)[1])
-                New_Path_2.end_coordinate = DR_jump_search(path.end_coordinate)[2]
-                output.append(New_Path_2)
-        if len(output) == 0:
-            break    
-        input.clear()
-        for path in output:
-            input.append(path)
-        output.clear()
-    single_black_pawn_jump_moves = input
-    return single_black_pawn_jump_moves
-        
+        Path_DR = create_Path_DR(jumper_coordinate, DR_jump_info, occupied_squares)
+        initial_black_pawn_paths.append(Path_DR)
+    return initial_black_pawn_paths
+
+def create_initial_red_pawn_paths(jumper_coordinate):
+    occupied_squares = locate_occupied_squares()
+    initial_red_pawn_paths = []
+    UL_jump_info = UL_jump_search(jumper_coordinate, None)
+    UR_jump_info = UR_jump_search(jumper_coordinate, None)
+    if UL_jump_info is not None:
+        Path_UL = create_Path_UL(jumper_coordinate, UL_jump_info, occupied_squares)
+        initial_red_pawn_paths.append(Path_UL)
+    if UR_jump_info is not None:
+        Path_UR = create_Path_UR(jumper_coordinate, UR_jump_info, occupied_squares)
+        initial_red_pawn_paths.append(Path_UR)
+    return initial_red_pawn_paths
+
+def create_initial_king_paths(jumper_coordinate):
+    occupied_squares = locate_occupied_squares()
+    initial_king_paths = []
+    DL_jump_info = DL_jump_search(jumper_coordinate, None)
+    DR_jump_info = DR_jump_search(jumper_coordinate, None)
+    UL_jump_info = UL_jump_search(jumper_coordinate, None)
+    UR_jump_info = UR_jump_search(jumper_coordinate, None)
+    if DL_jump_info is not None:
+        Path_DL = create_Path_DL(jumper_coordinate, DL_jump_info, occupied_squares)
+        initial_king_paths.append(Path_DL)
+    if DR_jump_info is not None:
+        Path_DR = create_Path_DR(jumper_coordinate, DR_jump_info, occupied_squares)
+        initial_king_paths.append(Path_DR)
+    if UL_jump_info is not None:
+        Path_UL = create_Path_UL(jumper_coordinate, UL_jump_info, occupied_squares)
+        initial_king_paths.append(Path_UL)
+    if UR_jump_info is not None:
+        Path_UR = create_Path_UR(jumper_coordinate, UR_jump_info, occupied_squares)
+        initial_king_paths.append(Path_UR)
+    return initial_king_paths
+
+# JUMP MOVE CALCULATION FUNCTIONS:
+
+def create_black_pawn_path_calculation_info(path, piece_color):
+    Path_A = copy.deepcopy(path)
+    if Path_A is not None:
+        Path_A_jump_info = DL_jump_search(Path_A.end_coordinate, piece_color)
+    else:
+        Path_A_jump_info = None
+    Path_B = copy.deepcopy(path)
+    if Path_B is not None:
+        Path_B_jump_info = DR_jump_search(Path_B.end_coordinate, piece_color)
+    else:
+        Path_B_jump_info = None
+    return (Path_A, Path_A_jump_info, Path_B, Path_B_jump_info)
+
+def create_red_pawn_path_calculation_info(path, piece_color):
+    Path_A = copy.deepcopy(path)
+    if Path_A is not None:
+        Path_A_jump_info = UL_jump_search(Path_A.end_coordinate, piece_color)
+    else:
+        Path_A_jump_info = None
+    Path_B = copy.deepcopy(path)
+    if Path_B is not None:
+        Path_B_jump_info = UR_jump_search(Path_B.end_coordinate, piece_color)
+    else:
+        Path_B_jump_info = None
+    return (Path_A, Path_A_jump_info, Path_B, Path_B_jump_info)
+
+def create_king_path_calculation_info(path, piece_color):
+    Path_A = copy.deepcopy(path)
+    if Path_A is not None:
+        Path_A_jump_info = DL_jump_search(Path_A.end_coordinate, piece_color)
+    else:
+        Path_A_jump_info = None
+    Path_B = copy.deepcopy(path)
+    if Path_B is not None:
+        Path_B_jump_info = DR_jump_search(Path_B.end_coordinate, piece_color)
+    else:
+        Path_B_jump_info = None
+    Path_C = copy.deepcopy(path)
+    if Path_C is not None:
+        Path_C_jump_info = UL_jump_search(Path_C.end_coordinate, piece_color)
+    else:
+        Path_C_jump_info = None
+    Path_D = copy.deepcopy(path)
+    if Path_D is not None:
+        Path_D_jump_info = UR_jump_search(Path_D.end_coordinate, piece_color)
+    else:
+        Path_D_jump_info = None
+    return (Path_A, Path_A_jump_info, Path_B, Path_B_jump_info, Path_C, Path_C_jump_info, Path_D, Path_D_jump_info)
+
+def update_pawn_Path_A(path_calculation_info, occupied_squares):
+    Path_A = path_calculation_info[0]
+    Path_A_jump_info = path_calculation_info[1]
+    Path_A_jumpee = Path_A_jump_info[1]
+    Path_A_destination = Path_A_jump_info[2]
+    if Path_A_destination is not None:
+        if Path_A_destination not in occupied_squares:
+            Path_A.record_capture(Path_A_jumpee)
+            Path_A.end_coordinate = Path_A_destination
+            return Path_A
+
+def update_pawn_Path_B(path_calculation_info, occupied_squares):
+    Path_B = path_calculation_info[2]
+    Path_B_jump_info = path_calculation_info[3]
+    Path_B_jumpee = Path_B_jump_info[1]
+    Path_B_destination = Path_B_jump_info[2]
+    if Path_B_destination is not None:
+        if Path_B_destination not in occupied_squares:
+            Path_B.record_capture(Path_B_jumpee)
+            Path_B.end_coordinate = Path_B_destination
+            return Path_B
+
+def update_king_Path_A(path_calculation_info, occupied_squares):
+    Path_A = path_calculation_info[0]
+    Path_A_jump_info = path_calculation_info[1]
+    Path_A_jumpee = Path_A_jump_info[1]
+    Path_A_destination = Path_A_jump_info[2]
+    previous_captures = Path_A.captures
+    if Path_A_destination is not None and Path_A_jumpee not in previous_captures:
+        if Path_A_destination not in occupied_squares or Path_A_destination == Path_A.start_coordinate:
+            Path_A.record_capture(Path_A_jumpee)
+            Path_A.end_coordinate = Path_A_destination
+            return Path_A
+            
+def update_king_Path_B(path_calculation_info, occupied_squares):
+    Path_B = path_calculation_info[2]
+    Path_B_jump_info = path_calculation_info[3]
+    Path_B_jumpee = Path_B_jump_info[1]
+    Path_B_destination = Path_B_jump_info[2]
+    previous_captures = Path_B.captures
+    if Path_B_destination is not None and Path_B_jumpee not in previous_captures:
+        if Path_B_destination not in occupied_squares or Path_B_destination == Path_B.start_coordinate:
+            Path_B.record_capture(Path_B_jumpee)
+            Path_B.end_coordinate = Path_B_destination
+            return Path_B
+
+def update_king_Path_C(path_calculation_info, occupied_squares):
+    Path_C = path_calculation_info[4]
+    Path_C_jump_info = path_calculation_info[5]
+    Path_C_jumpee = Path_C_jump_info[1]
+    Path_C_destination = Path_C_jump_info[2]
+    previous_captures = Path_C.captures
+    if Path_C_destination is not None and Path_C_jumpee not in previous_captures:
+        if Path_C_destination not in occupied_squares or Path_C_destination == Path_C.start_coordinate:
+            Path_C.record_capture(Path_C_jumpee)
+            Path_C.end_coordinate = Path_C_destination
+            return Path_C
+
+def update_king_Path_D(path_calculation_info, occupied_squares):
+    Path_D = path_calculation_info[6]
+    Path_D_jump_info = path_calculation_info[7]
+    Path_D_jumpee = Path_D_jump_info[1]
+    Path_D_destination = Path_D_jump_info[2]
+    previous_captures = Path_D.captures
+    if Path_D_destination is not None and Path_D_jumpee not in previous_captures:
+        if Path_D_destination not in occupied_squares or Path_D_destination == Path_D.start_coordinate:
+            Path_D.record_capture(Path_D_jumpee)
+            Path_D.end_coordinate = Path_D_destination
+            return Path_D
+
+def create_pawn_paths_to_process(path_calculation_info, occupied_squares):
+    paths_to_process = []
+    Path_A = path_calculation_info[0]
+    Path_A_jump_info = path_calculation_info[1]
+    Path_B = path_calculation_info[2]
+    Path_B_jump_info = path_calculation_info[3]
+    if Path_A_jump_info is not None:
+        Path_A = update_pawn_Path_A(path_calculation_info, occupied_squares)
+        if Path_A is not None:
+            paths_to_process.append(Path_A)
+    if Path_B_jump_info is not None:
+        Path_B = update_pawn_Path_B(path_calculation_info, occupied_squares)
+        if Path_B is not None:
+            paths_to_process.append(Path_B)
+    return paths_to_process
+
+def create_king_paths_to_process(path_calculation_info, occupied_squares):
+    paths_to_process = []
+    Path_A = path_calculation_info[0]
+    Path_A_jump_info = path_calculation_info[1]
+    Path_B = path_calculation_info[2]
+    Path_B_jump_info = path_calculation_info[3]
+    Path_C = path_calculation_info[4]
+    Path_C_jump_info = path_calculation_info[5]
+    Path_D = path_calculation_info[6]
+    Path_D_jump_info = path_calculation_info[7]
+    if Path_A_jump_info is not None:
+        Path_A = update_king_Path_A(path_calculation_info, occupied_squares)
+        if Path_A is not None:
+            paths_to_process.append(Path_A)
+    if Path_B_jump_info is not None:
+        Path_B = update_king_Path_B(path_calculation_info, occupied_squares)
+        if Path_B is not None:
+            paths_to_process.append(Path_B)
+    if Path_C_jump_info is not None:
+        Path_C = update_king_Path_C(path_calculation_info, occupied_squares)
+        if Path_C is not None:
+            paths_to_process.append(Path_C)
+    if Path_D_jump_info is not None:
+        Path_D = update_king_Path_D(path_calculation_info, occupied_squares)
+        if Path_D is not None:
+            paths_to_process.append(Path_D)
+    return paths_to_process
+
+def calculate_black_pawn_paths(jumper_coordinate):
+    occupied_squares = locate_occupied_squares()
+    piece_color = get_square_value(jumper_coordinate) & 3
+    initial_black_pawn_paths = create_initial_black_pawn_paths(jumper_coordinate)
+    processing = []
+    finished_paths = []
+    for path in initial_black_pawn_paths:
+        processing.append(path)
+    while len(processing) > 0:
+        for path in processing:
+            path_calculation_info = create_black_pawn_path_calculation_info(path, piece_color)
+            paths_to_process = create_pawn_paths_to_process(path_calculation_info, occupied_squares)
+            if len(paths_to_process) == 0:
+                finished_paths.append(path)
+            else:
+                for updated_paths in paths_to_process:
+                    processing.append(updated_paths)
+            processing.remove(path)
+    finished_black_pawn_paths = finished_paths
+    return finished_black_pawn_paths
+
+def calculate_red_pawn_paths(jumper_coordinate):
+    occupied_squares = locate_occupied_squares()
+    piece_color = get_square_value(jumper_coordinate) & 3
+    initial_red_pawn_paths = create_initial_red_pawn_paths(jumper_coordinate)
+    processing = []
+    finished_paths = []
+    for path in initial_red_pawn_paths:
+        processing.append(path)
+    while len(processing) > 0:
+        for path in processing:
+            path_calculation_info = create_red_pawn_path_calculation_info(path, piece_color)
+            paths_to_process = create_pawn_paths_to_process(path_calculation_info, occupied_squares)
+            if len(paths_to_process) == 0:
+                finished_paths.append(path)
+            else:
+                for updated_paths in paths_to_process:
+                    processing.append(updated_paths)
+            processing.remove(path)
+    finished_red_pawn_paths = finished_paths
+    return finished_red_pawn_paths
+
+def calculate_king_paths(jumper_coordinate):
+    occupied_squares = locate_occupied_squares()
+    piece_color = get_square_value(jumper_coordinate) & 3
+    initial_king_paths = create_initial_king_paths(jumper_coordinate)
+    processing = []
+    finished_paths = []
+    for path in initial_king_paths:
+        processing.append(path)
+    while len(processing) > 0:
+        for path in processing:
+            path_calculation_info = create_king_path_calculation_info(path, piece_color)
+            paths_to_process = create_king_paths_to_process(path_calculation_info, occupied_squares)
+            if len(paths_to_process) == 0:
+                finished_paths.append(path)
+            else:
+                for updated_paths in paths_to_process:
+                    processing.append(updated_paths)
+            processing.remove(path)
+    finished_king_paths = finished_paths
+    return finished_king_paths
 
 
 
 
-generate_starting_position()
-board_position[13] = 2
-board_position[26] = 0
-
-x = find_single_black_pawn_jump_moves(9)
-
-for jump_move in x:
-    print(jump_move)
 
 
 
@@ -337,75 +615,22 @@ for jump_move in x:
 
 
 
+generate_empty_board()
 
+board_position[7] = 6
 
+board_position[10] = 1
+board_position[17] = 5
+board_position[18] = 2
+board_position[25] = 1
+board_position[26] = 1
 
+board_position[21] = 2
 
+x = calculate_king_paths(8)
 
-
-def find_black_pawn_jump_candidates():
-    black_pawn_jump_candidates = []
-    black_pawns = locate_black_pawns()
-    for pawn in black_pawns:
-        DL_jump = DL_jump_search(pawn)
-        DR_jump = DR_jump_search(pawn)
-        if DL_jump is not None or DR_jump is not None:
-            black_pawn_jump_candidates.append(pawn)
-    return black_pawn_jump_candidates
-        
-def find_black_king_jump_candidates():
-    black_king_jump_candidates = []
-    black_kings = locate_black_kings()
-    for king in black_kings:
-        DL_jump = DL_jump_search(king)
-        DR_jump = DR_jump_search(king)
-        UL_jump = UL_jump_search(king)
-        UR_jump = UR_jump_search(king)
-        if DL_jump is not None or DR_jump is not None or UL_jump is not None or UR_jump is not None:
-            black_king_jump_candidates.append(king)
-    return black_king_jump_candidates
-
-def find_black_piece_jump_candidates():
-    black_piece_jump_candidates = []
-    black_pawn_jump_candidates = find_black_pawn_jump_candidates()
-    for pawn in black_pawn_jump_candidates:
-        black_piece_jump_candidates.append(pawn)
-    black_king_jump_candidates = find_black_king_jump_candidates()
-    for king in black_king_jump_candidates:
-        black_piece_jump_candidates.append(king)
-    return black_piece_jump_candidates
-
-def find_red_pawn_jump_candidates():
-    red_pawn_jump_candidates = []
-    red_pawns = locate_red_pawns()
-    for pawn in red_pawns:
-        UL_jump = UL_jump_search(pawn)
-        UR_jump = UR_jump_search(pawn)
-        if UL_jump is not None or UR_jump is not None:
-            red_pawn_jump_candidates.append(pawn)
-    return red_pawn_jump_candidates
-        
-def find_red_king_jump_candidates():
-    red_king_jump_candidates = []
-    red_kings = locate_red_kings()
-    for king in red_kings:
-        DL_jump = DL_jump_search(king)
-        DR_jump = DR_jump_search(king)
-        UL_jump = UL_jump_search(king)
-        UR_jump = UR_jump_search(king)
-        if DL_jump is not None or DR_jump is not None or UL_jump is not None or UR_jump is not None:
-            red_king_jump_candidates.append(king)
-    return red_king_jump_candidates
-
-def find_red_piece_jump_candidates():
-    red_piece_jump_candidates = []
-    red_pawn_jump_candidates = find_red_pawn_jump_candidates()
-    for pawn in red_pawn_jump_candidates:
-        red_piece_jump_candidates.append(pawn)
-    red_king_jump_candidates = find_red_king_jump_candidates()
-    for king in red_king_jump_candidates:
-        red_piece_jump_candidates.append(king)
-    return red_piece_jump_candidates
+for path in x:
+    print(path)
 
 
 
@@ -418,13 +643,8 @@ def find_red_piece_jump_candidates():
 
 
 
-def list_all_black_pawn_jump_moves():
-    black_pawn_jump_candidates = find_black_pawn_jump_candidates()
-    black_pawn_jump_moves = []
-    for pawn in black_pawn_jump_candidates:
-        single_black_pawn_jump_moves = find_single_black_pawn_jump_moves(pawn)
-        black_pawn_jump_moves.append(single_black_pawn_jump_moves)
-    return black_pawn_jump_moves
+
+
 
 
 
