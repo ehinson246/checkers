@@ -605,11 +605,43 @@ def calculate_king_paths(jumper_coordinate):
     finished_king_paths = finished_paths
     return finished_king_paths
 
+# JUMP MOVE LIST FUNCTIONS:
 
+def list_all_black_jump_moves():
+    black_jump_moves = []
+    black_pawns = locate_black_pawns()
+    black_kings = locate_black_kings()
+    for pawn in black_pawns:
+        jumper_coordinate = pawn
+        paths = calculate_black_pawn_paths(jumper_coordinate)
+        for path in paths:
+            if path is not None:
+                black_jump_moves.append(path)
+    for king in black_kings:
+        jumper_coordinate = king
+        paths = calculate_king_paths(jumper_coordinate)
+        for path in paths:
+            if path is not None:
+                black_jump_moves.append(path)
+    return black_jump_moves
 
-
-
-
+def list_all_red_jump_moves():
+    red_jump_moves = []
+    red_pawns = locate_red_pawns()
+    red_kings = locate_red_kings()
+    for pawn in red_pawns:
+        jumper_coordinate = pawn
+        paths = calculate_red_pawn_paths(jumper_coordinate)
+        for path in paths:
+            if path is not None:
+                red_jump_moves.append(path)
+    for king in red_kings:
+        jumper_coordinate = king
+        paths = calculate_king_paths(jumper_coordinate)
+        for path in paths:
+            if path is not None:
+                red_jump_moves.append(path)
+    return red_jump_moves
 
 
 
@@ -617,20 +649,22 @@ def calculate_king_paths(jumper_coordinate):
 
 generate_empty_board()
 
-board_position[7] = 6
+# board_position[7] = 1
+board_position[12] = 6
+board_position[30] = 2
 
-board_position[10] = 1
+board_position[10] = 5
+board_position[16] = 1
 board_position[17] = 5
-board_position[18] = 2
 board_position[25] = 1
-board_position[26] = 1
+board_position[24] = 1
 
-board_position[21] = 2
+# board_position[14] = 2
 
-x = calculate_king_paths(8)
+x = list_all_red_jump_moves()
 
-for path in x:
-    print(path)
+for jump_move in x:
+    print(jump_move)
 
 
 
