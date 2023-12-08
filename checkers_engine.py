@@ -643,28 +643,58 @@ def list_all_red_jump_moves():
                 red_jump_moves.append(path)
     return red_jump_moves
 
+# LIST ALL POSSIBLE MOVES FUNCTIONS:
+
+def list_all_possible_black_moves():
+    all_possible_black_moves = []
+    black_jump_moves = list_all_black_jump_moves()
+    black_simples = find_black_simples()
+    if len(black_jump_moves) > 0:
+        for jump_move in black_jump_moves:
+            all_possible_black_moves.append(jump_move)
+    else:
+        for simple in black_simples:
+            all_possible_black_moves.append(simple)
+    return all_possible_black_moves
+
+def list_all_possible_red_moves():
+    all_possible_red_moves = []
+    red_jump_moves = list_all_red_jump_moves()
+    red_simples = find_red_simples()
+    if len(red_jump_moves) > 0:
+        for jump_move in red_jump_moves:
+            all_possible_red_moves.append(jump_move)
+    else:
+        for simple in red_simples:
+            all_possible_red_moves.append(simple)
+    return all_possible_red_moves
+
+
+
+
+
 
 
 
 
 generate_empty_board()
 
-# board_position[7] = 1
-board_position[12] = 6
-board_position[30] = 2
+board_position[0] = 9
+# board_position[14] = 1
+board_position[30] = 5
 
-board_position[10] = 5
-board_position[16] = 1
-board_position[17] = 5
-board_position[25] = 1
-board_position[24] = 1
+board_position[10] = 2
+board_position[16] = 2
+board_position[17] = 6
+board_position[24] = 6
+board_position[25] = 2
 
 # board_position[14] = 2
 
-x = list_all_red_jump_moves()
+x = list_all_possible_black_moves()
 
-for jump_move in x:
-    print(jump_move)
+for move in x:
+    print(move)
 
 
 
