@@ -792,17 +792,23 @@ def select_red_move():
 def update_start_and_end_coordinates(start_coordinate, end_coordinate):
     piece_value = get_square_value(start_coordinate)
     destination_value = get_square_value(end_coordinate)
-    if piece_value & 8:
+    on_back_rank = piece_value & 8
+    going_to_back_rank = destination_value & 8
+    is_king = piece_value & 4
+    if on_back_rank:
         board_position[start_coordinate - 1] = 8
     else:
         board_position[start_coordinate - 1] = 0
-    if destination_value == 8:
-        if piece_value & 4:
-            board_position[end_coordinate - 1] = piece_value
+    if going_to_back_rank:
+        if is_king:
+            board_position[end_coordinate - 1] = piece_value + 8
         else:
             board_position[end_coordinate - 1] = piece_value + 12
     else:
-        board_position[end_coordinate - 1] = piece_value
+        if on_back_rank:
+            board_position[end_coordinate - 1] = piece_value - 8
+        else:
+            board_position[end_coordinate - 1] = piece_value
 
 def update_board_position_for_simple_move(selected_move):
     move_coordinates = re.split("[-]", selected_move)
@@ -818,7 +824,7 @@ def update_board_position_for_jump_move(selected_move):
     update_start_and_end_coordinates(start_coordinate, end_coordinate)
     for capture in captures:
         board_position[capture - 1] = 0
-    print(f"You have played the jump move {selected_move}\n")
+    print(f"\nYou have played the jump move {selected_move}\n")
 
 def play_selected_move(selected_move):
     if type(selected_move) is str:
@@ -828,14 +834,46 @@ def play_selected_move(selected_move):
 
 # PLAYABILITY:
 
-generate_starting_position()
+def check_for_legal_black_moves():
+    moves = list_all_possible_black_moves()
+    if len(moves) > 0:
+        return True
+    elif len(moves) == 0:
+        return False
+    
+def check_for_legal_red_moves():
+    moves = list_all_possible_red_moves()
+    if len(moves) > 0:
+        return True
+    elif len(moves) == 0:
+        return False
 
-while True:
+def play_black_turn(board_position):
     print("Turn: black\n")
     print_current_position(board_position)
     black_move = select_black_move()
     play_selected_move(black_move)
+
+def play_red_turn(board_position):
     print("Turn: red\n")
     print_current_position(board_position)
     red_move = select_red_move()
     play_selected_move(red_move)
+
+generate_starting_position()
+
+while True:
+    any_legal_black_moves = check_for_legal_black_moves()
+    if any_legal_black_moves:
+        play_black_turn(board_position)
+    else:
+        print_current_position(board_position)
+        print("\nGame over. Red wins!\n")
+        break
+    any_legal_red_moves = check_for_legal_red_moves()
+    if any_legal_red_moves:
+        play_red_turn(board_position)
+    else:
+        print_current_position(board_position)
+        print("\nGame over. Black wins!\n")
+        break
