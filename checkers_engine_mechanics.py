@@ -6,8 +6,8 @@
 # U = up, D = down, L = left, R = right (when used as prefixes for search functions)
 
 import math
-import re
 import copy
+import re
 
 # BOARD GENERATION FUNCTIONS:
 
@@ -669,59 +669,173 @@ def list_all_possible_red_moves():
             all_possible_red_moves.append(simple)
     return all_possible_red_moves
 
+# USER INTERFACE CODE:
 
+# o = black pawn, O = black king, x = red pawn, X = red king, " " = empty square, "=" = non-coordinate square
 
+# empty board:
 
+# row 1 = "|=| |=| |=| |=| |"
+# row 2 = "| |=| |=| |=| |=|"
+# row 3 = "|=| |=| |=| |=| |"
+# row 4 = "| |=| |=| |=| |=|"
+# row 5 = "|=| |=| |=| |=| |"
+# row 6 = "| |=| |=| |=| |=|"
+# row 7 = "|=| |=| |=| |=| |"
+# row 8 = "| |=| |=| |=| |=|"
 
+# starting position:
 
+# row 1 = "|=|o|=|o|=|o|=|o|"
+# row 2 = "|o|=|o|=|o|=|o|=|"
+# row 3 = "|=|o|=|o|=|o|=|o|"
+# row 4 = "| |=| |=| |=| |=|"
+# row 5 = "|=| |=| |=| |=| |"
+# row 6 = "|x|=|x|=|x|=|x|=|"
+# row 7 = "|=|x|=|x|=|x|=|x|"
+# row 8 = "|x|=|x|=|x|=|x|=|"
 
+def translate_position(position):
+    translated_position = []
+    for value in position:
+        match value:
+            case 0:
+                translated_position.append(" ")
+            case 8:
+                translated_position.append(" ")
+            case 1:
+                translated_position.append("o")
+            case 5:
+                translated_position.append("O")
+            case 2:
+                translated_position.append("x")
+            case 6:
+                translated_position.append("X")
+            case 9:
+                translated_position.append("o")
+            case 13:
+                translated_position.append("O")
+            case 10:
+                translated_position.append("x")
+            case 14:
+                translated_position.append("X")
+    return translated_position
 
+def create_board_rows(T_board_position):
+    row_1 = f"|=|{T_board_position[0]}|=|{T_board_position[1]}|=|{T_board_position[2]}|=|{T_board_position[3]}|"
+    row_2 = f"|{T_board_position[4]}|=|{T_board_position[5]}|=|{T_board_position[6]}|=|{T_board_position[7]}|=|"
+    row_3 = f"|=|{T_board_position[8]}|=|{T_board_position[9]}|=|{T_board_position[10]}|=|{T_board_position[11]}|"
+    row_4 = f"|{T_board_position[12]}|=|{T_board_position[13]}|=|{T_board_position[14]}|=|{T_board_position[15]}|=|"
+    row_5 = f"|=|{T_board_position[16]}|=|{T_board_position[17]}|=|{T_board_position[18]}|=|{T_board_position[19]}|"
+    row_6 = f"|{T_board_position[20]}|=|{T_board_position[21]}|=|{T_board_position[22]}|=|{T_board_position[23]}|=|"
+    row_7 = f"|=|{T_board_position[24]}|=|{T_board_position[25]}|=|{T_board_position[26]}|=|{T_board_position[27]}|"
+    row_8 = f"|{T_board_position[28]}|=|{T_board_position[29]}|=|{T_board_position[30]}|=|{T_board_position[31]}|=|"
+    rows = [row_1, row_2, row_3, row_4, row_5, row_6, row_7, row_8]
+    return rows
 
-generate_empty_board()
+def print_current_position(board_position):
+    T_board_position = translate_position(board_position)
+    rows = create_board_rows(T_board_position)
+    for row in rows:
+        print(row)
 
-board_position[0] = 9
-# board_position[14] = 1
-board_position[30] = 5
+def select_black_move():
+    moves = list_all_possible_black_moves()
+    count = 1
+    total_moves = []
+    print("\nMoves for black:\n")
+    for move in moves:
+        move_string = f"{count}: {move}"
+        print(move_string)
+        total_moves.append(count)
+        count += 1
+    while True:
+        move_selection_number_string = input("\nSelect a move by entering the move number and pressing 'Enter': ")
+        if not move_selection_number_string.isnumeric():
+            print("\nInvalid move. Please try again.")
+            continue
+        else:
+            move_selection_number_integer = int(move_selection_number_string)
+            if move_selection_number_integer not in total_moves:
+                print("\nInvalid move. Please try again.")
+                continue
+            else:
+                break
+    selected_move = moves[move_selection_number_integer - 1]
+    return selected_move
 
-board_position[10] = 2
-board_position[16] = 2
-board_position[17] = 6
-board_position[24] = 6
-board_position[25] = 2
+def select_red_move():
+    moves = list_all_possible_red_moves()
+    count = 1
+    total_moves = []
+    print("\nMoves for red:\n")
+    for move in moves:
+        move_string = f"{count}: {move}"
+        print(move_string)
+        total_moves.append(count)
+        count += 1
+    while True:
+        move_selection_number_string = input("\nSelect a move by entering the move number and pressing 'Enter': ")
+        if not move_selection_number_string.isnumeric():
+            print("\nInvalid move. Please try again.")
+            continue
+        else:
+            move_selection_number_integer = int(move_selection_number_string)
+            if move_selection_number_integer not in total_moves:
+                print("\nInvalid move. Please try again.")
+                continue
+            else:
+                break
+    selected_move = moves[move_selection_number_integer - 1]
+    return selected_move
 
-# board_position[14] = 2
+def update_start_and_end_coordinates(start_coordinate, end_coordinate):
+    piece_value = get_square_value(start_coordinate)
+    destination_value = get_square_value(end_coordinate)
+    if piece_value & 8:
+        board_position[start_coordinate - 1] = 8
+    else:
+        board_position[start_coordinate - 1] = 0
+    if destination_value == 8:
+        if piece_value & 4:
+            board_position[end_coordinate - 1] = piece_value
+        else:
+            board_position[end_coordinate - 1] = piece_value + 12
+    else:
+        board_position[end_coordinate - 1] = piece_value
 
-x = list_all_possible_black_moves()
+def update_board_position_for_simple_move(selected_move):
+    move_coordinates = re.split("[-]", selected_move)
+    start_coordinate = int(move_coordinates[0])
+    end_coordinate = int(move_coordinates[1])
+    update_start_and_end_coordinates(start_coordinate, end_coordinate)
+    print(f"\nYou have played the simple move {selected_move}\n")
 
-for move in x:
-    print(move)
+def update_board_position_for_jump_move(selected_move):
+    start_coordinate = selected_move.start_coordinate
+    end_coordinate = selected_move.end_coordinate
+    captures = selected_move.captures
+    update_start_and_end_coordinates(start_coordinate, end_coordinate)
+    for capture in captures:
+        board_position[capture - 1] = 0
+    print(f"You have played the jump move {selected_move}\n")
 
+def play_selected_move(selected_move):
+    if type(selected_move) is str:
+        update_board_position_for_simple_move(selected_move)
+    elif type(selected_move) is Path:
+        update_board_position_for_jump_move(selected_move)
 
+# PLAYABILITY:
 
+generate_starting_position()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+while True:
+    print("Turn: black\n")
+    print_current_position(board_position)
+    black_move = select_black_move()
+    play_selected_move(black_move)
+    print("Turn: red\n")
+    print_current_position(board_position)
+    red_move = select_red_move()
+    play_selected_move(red_move)
