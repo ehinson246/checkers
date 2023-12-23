@@ -18,7 +18,7 @@ This repository is where I keep all the files for my checkers engine. The goal i
 ## Regarding the UI:
 
 The empty board looks like the following (where the equals sign represents a square that cannot be accessed by pieces):
-
+```
 |=| |=| |=| |=| |
 | |=| |=| |=| |=|
 |=| |=| |=| |=| |
@@ -27,9 +27,9 @@ The empty board looks like the following (where the equals sign represents a squ
 | |=| |=| |=| |=|
 |=| |=| |=| |=| |
 | |=| |=| |=| |=|
-
+```
 The starting position looks like the following (where an "o" is a black piece and an "x" is a red piece):
-
+```
 |=|o|=|o|=|o|=|o|
 |o|=|o|=|o|=|o|=|
 |=|o|=|o|=|o|=|o|
@@ -38,7 +38,7 @@ The starting position looks like the following (where an "o" is a black piece an
 |x|=|x|=|x|=|x|=|
 |=|x|=|x|=|x|=|x|
 |x|=|x|=|x|=|x|=|
-
+```
 When a piece gets to the back rank, it is promoted to a king (denoted by a capital letter: either "O" or "X").
 
 Additionally, each accessible square is represented by a coordinate from 1 to 32, going from the top left to the bottom right (the same way you are reading this sentence). The following image demonstrates this nicely: https://commons.wikimedia.org/wiki/File:Draughts_Notation.svg#/media/File:Draughts_Notation.svg
