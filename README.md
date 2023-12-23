@@ -11,7 +11,7 @@ This repository is where I keep all the files for my checkers engine. The goal i
 
 - [ ] create an evaluation function to evaluate any board position and find the best move from a list of all possible moves in that position (up to a reasonable depth)
 
-- [ ] create a player input method that will alow a person to play a game of checkers against the engine
+- [x] create a player input method that will alow a person to play a game of checkers against the engine
 
 ---
 
