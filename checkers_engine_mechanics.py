@@ -673,33 +673,11 @@ def list_all_possible_red_moves(board_position):
 
 # USER INTERFACE CODE:
 
-# o = black pawn, O = black king, x = red pawn, X = red king, " " = empty square, "=" = non-coordinate square
+# "o" = black pawn, "O" = black king, "x" = red pawn, "X" = red king, " " = empty square, "=" = non-coordinate square
 
-# empty board:
-
-# row 1 = "|=| |=| |=| |=| |"
-# row 2 = "| |=| |=| |=| |=|"
-# row 3 = "|=| |=| |=| |=| |"
-# row 4 = "| |=| |=| |=| |=|"
-# row 5 = "|=| |=| |=| |=| |"
-# row 6 = "| |=| |=| |=| |=|"
-# row 7 = "|=| |=| |=| |=| |"
-# row 8 = "| |=| |=| |=| |=|"
-
-# starting position:
-
-# row 1 = "|=|o|=|o|=|o|=|o|"
-# row 2 = "|o|=|o|=|o|=|o|=|"
-# row 3 = "|=|o|=|o|=|o|=|o|"
-# row 4 = "| |=| |=| |=| |=|"
-# row 5 = "|=| |=| |=| |=| |"
-# row 6 = "|x|=|x|=|x|=|x|=|"
-# row 7 = "|=|x|=|x|=|x|=|x|"
-# row 8 = "|x|=|x|=|x|=|x|=|"
-
-def translate_position(position):
+def translate_position(board_position):
     translated_position = []
-    for value in position:
+    for value in board_position:
         match value:
             case 0:
                 translated_position.append(" ")
@@ -722,6 +700,8 @@ def translate_position(position):
             case 14:
                 translated_position.append("\033[31;44mX\033[97;44m")
     return translated_position
+
+# The "T_" prefix indicates that the board position has been translated to a printable format.
 
 def create_board_rows(T_board_position):
     row_1 = f"|=|{T_board_position[0]}|=|{T_board_position[1]}|=|{T_board_position[2]}|=|{T_board_position[3]}|"
@@ -791,63 +771,47 @@ def select_red_move(board_position):
     selected_move = moves[move_selection_number_integer - 1]
     return selected_move
 
-def get_updated_start_and_end_coordinate_values(start_coordinate, end_coordinate, board_position):
+def update_start_and_end_coordinate_values(start_coordinate, end_coordinate, board_position):
     piece_value = get_square_value(start_coordinate, board_position)
     destination_value = get_square_value(end_coordinate, board_position)
     on_back_rank = piece_value & 8
     going_to_back_rank = destination_value & 8
     is_king = piece_value & 4
     if on_back_rank:
-        new_start_coordinate_value = 8
+        board_position[start_coordinate - 1] = 8
     else:
-        new_start_coordinate_value = 0
+        board_position[start_coordinate - 1] = 0
     if going_to_back_rank:
         if is_king:
-            new_end_coordinate_value = piece_value + 8
+            board_position[end_coordinate - 1] = piece_value + 8
         else:
-            new_end_coordinate_value = piece_value + 12
+            board_position[end_coordinate - 1] = piece_value + 12
     else:
         if on_back_rank:
-            new_end_coordinate_value = piece_value - 8
+            board_position[end_coordinate - 1] = piece_value - 8
         else:
-            new_end_coordinate_value = piece_value
-    return (new_start_coordinate_value, new_end_coordinate_value)
+            board_position[end_coordinate - 1] = piece_value
 
-def get_updated_simple_move_values(selected_move, board_position):
+def update_board_for_simple_move(selected_move, board_position):
     move_coordinates = re.split("[-]", selected_move)
     start_coordinate = int(move_coordinates[0])
     end_coordinate = int(move_coordinates[1])
-    new_start_coordinate_value = get_updated_start_and_end_coordinate_values(start_coordinate, end_coordinate, board_position)[0]
-    new_end_coordinate_value = get_updated_start_and_end_coordinate_values(start_coordinate, end_coordinate, board_position)[1]
-    return (start_coordinate, new_start_coordinate_value, end_coordinate, new_end_coordinate_value)
+    update_start_and_end_coordinate_values(start_coordinate, end_coordinate, board_position)
 
-def get_updated_jump_move_values(selected_move, board_position):
+def update_board_for_jump_move(selected_move, board_position):
     start_coordinate = selected_move.start_coordinate
     end_coordinate = selected_move.end_coordinate
     captures = selected_move.captures
-    new_start_coordinate_value = get_updated_start_and_end_coordinate_values(start_coordinate, end_coordinate, board_position)[0]
-    new_end_coordinate_value = get_updated_start_and_end_coordinate_values(start_coordinate, end_coordinate, board_position)[1]
-    return (start_coordinate, new_start_coordinate_value, end_coordinate, new_end_coordinate_value, captures)
+    update_start_and_end_coordinate_values(start_coordinate, end_coordinate, board_position)
+    for capture in captures:
+        board_position[capture - 1] = 0
 
 def play_selected_move(selected_move, board_position):
     if type(selected_move) is str:
-        start_coordinate = get_updated_simple_move_values(selected_move, board_position)[0]
-        new_start_coordinate_value = get_updated_simple_move_values(selected_move, board_position)[1]
-        end_coordinate = get_updated_simple_move_values(selected_move, board_position)[2]
-        new_end_coordinate_value = get_updated_simple_move_values(selected_move, board_position)[3]
-        board_position[start_coordinate - 1] = new_start_coordinate_value
-        board_position[end_coordinate - 1] = new_end_coordinate_value
+        update_board_for_simple_move(selected_move, board_position)
         print(f"\nYou have played the simple move {selected_move}\n")
     elif type(selected_move) is Path:
-        start_coordinate = get_updated_jump_move_values(selected_move, board_position)[0]
-        new_start_coordinate_value = get_updated_jump_move_values(selected_move, board_position)[1]
-        end_coordinate = get_updated_jump_move_values(selected_move, board_position)[2]
-        new_end_coordinate_value = get_updated_jump_move_values(selected_move, board_position)[3]
-        captures = get_updated_jump_move_values(selected_move, board_position)[4]
-        board_position[start_coordinate - 1] = new_start_coordinate_value
-        board_position[end_coordinate - 1] = new_end_coordinate_value
-        for capture in captures:
-            board_position[capture - 1] = 0
+        update_board_for_jump_move(selected_move, board_position)
         print(f"\nYou have played the jump move {selected_move}\n")
 
 # PLAYABILITY:
