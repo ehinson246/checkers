@@ -11,9 +11,8 @@ import re
 
 # BOARD GENERATION FUNCTIONS:
 
-board_position = []
-
 def generate_starting_position():
+    board_position = []
     for i in range(1, 5):
         board_position.append(9)
     for i in range(5, 13):
@@ -24,14 +23,17 @@ def generate_starting_position():
         board_position.append(2)
     for i in range(29, 33):
         board_position.append(10)
+    return board_position
 
 def generate_empty_board():
+    board_position = []
     for i in range(1, 5):
         board_position.append(8)
     for i in range(5, 29):
         board_position.append(0)
     for i in range(29, 33):
         board_position.append(8)
+    return board_position
 
 # IMMEDIATE VISION SEARCH FUNCTIONS:
 
@@ -81,7 +83,7 @@ def UR_search(coordinate):
 
 # SQUARE LOCATION & IDENTIFICATION FUNCTIONS
 
-def get_square_value(coordinate):
+def get_square_value(coordinate, board_position):
     if coordinate is not None:
         n = coordinate
         value = board_position[n-1]
@@ -89,85 +91,85 @@ def get_square_value(coordinate):
         value = None
     return value
 
-def locate_black_pieces():
+def locate_black_pieces(board_position):
     black_pieces = []
     for i in range(1, 33):
        coordinate = i
-       value = get_square_value(coordinate)
+       value = get_square_value(coordinate, board_position)
        if value & 1:
            black_pieces.append(coordinate)
     return black_pieces
 
-def locate_black_kings():
+def locate_black_kings(board_position):
     black_kings = []
     for i in range(1, 33):
        coordinate = i
-       value = get_square_value(coordinate)
+       value = get_square_value(coordinate, board_position)
        if (value & 1) and (value & 4):
            black_kings.append(coordinate)
     return black_kings
 
-def locate_black_pawns():
+def locate_black_pawns(board_position):
     black_pawns = []
     for i in range(1, 33):
        coordinate = i
-       value = get_square_value(coordinate)
+       value = get_square_value(coordinate, board_position)
        if (value & 1) and not (value & 4):
            black_pawns.append(coordinate)
     return black_pawns
 
-def locate_red_pieces():
+def locate_red_pieces(board_position):
     red_pieces = []
     for i in range(1, 33):
        coordinate = i
-       value = get_square_value(coordinate)
+       value = get_square_value(coordinate, board_position)
        if value & 2:
            red_pieces.append(coordinate)
     return red_pieces
 
-def locate_red_kings():
+def locate_red_kings(board_position):
     red_kings = []
     for i in range(1, 33):
        coordinate = i
-       value = get_square_value(coordinate)
+       value = get_square_value(coordinate, board_position)
        if (value & 2) and (value & 4):
            red_kings.append(coordinate)
     return red_kings
 
-def locate_red_pawns():
+def locate_red_pawns(board_position):
     red_pawns = []
     for i in range(1, 33):
        coordinate = i
-       value = get_square_value(coordinate)
+       value = get_square_value(coordinate, board_position)
        if (value & 2) and not (value & 4):
            red_pawns.append(coordinate)
     return red_pawns
 
-def locate_occupied_squares():
+def locate_occupied_squares(board_position):
     occupied_squares = []
     for i in range(1, 33):
        coordinate = i
-       value = get_square_value(coordinate)
+       value = get_square_value(coordinate, board_position)
        if (value & 3) | 0:
            occupied_squares.append(coordinate)
     return occupied_squares
 
-def locate_kingmaker_squares():
+def locate_kingmaker_squares(board_position):
     kingmaker_squares = []
     for i in range(1, 33):
        coordinate = i
-       value = get_square_value(coordinate)
+       value = get_square_value(coordinate, board_position)
        if (value & 8):
            kingmaker_squares.append(coordinate)
     return kingmaker_squares
 
 # SIMPLE MOVE SEARCH FUNCTIONS:
 
-def D_simple_search(coordinate):
+def D_simple_search(coordinate, board_position):
     simples = []
     DL_coordinate = DL_search(coordinate)
     DR_coordinate = DR_search(coordinate)
-    occupied_squares = locate_occupied_squares()
+    occupied_squares = locate_occupied_squares(board_position)
     if DL_coordinate not in occupied_squares and DL_coordinate is not None:
         simple = str(coordinate) + '-' + str(DL_coordinate)
         simples.append(simple)
@@ -176,11 +178,11 @@ def D_simple_search(coordinate):
         simples.append(simple)
     return simples
 
-def U_simple_search(coordinate):
+def U_simple_search(coordinate, board_position):
     simples = []
     UL_coordinate = UL_search(coordinate)
     UR_coordinate = UR_search(coordinate)
-    occupied_squares = locate_occupied_squares()
+    occupied_squares = locate_occupied_squares(board_position)
     if UL_coordinate not in occupied_squares and UL_coordinate is not None:
         simple = str(coordinate) + '-' + str(UL_coordinate)
         simples.append(simple)
@@ -189,90 +191,90 @@ def U_simple_search(coordinate):
         simples.append(simple)
     return simples
 
-def find_black_simples():
-    black_pieces = locate_black_pieces()
-    black_kings = locate_black_kings()
+def find_black_simples(board_position):
+    black_pieces = locate_black_pieces(board_position)
+    black_kings = locate_black_kings(board_position)
     black_simples = []
     for coordinate in black_pieces:
-        D_simples = D_simple_search(coordinate)
+        D_simples = D_simple_search(coordinate, board_position)
         for simple in D_simples:
             black_simples.append(simple)
         if coordinate in black_kings:
-            U_simples = U_simple_search(coordinate)
+            U_simples = U_simple_search(coordinate, board_position)
             for simple in U_simples:
                 black_simples.append(simple)   
     return black_simples
 
-def find_red_simples():
-    red_pieces = locate_red_pieces()
-    red_kings = locate_red_kings()
+def find_red_simples(board_position):
+    red_pieces = locate_red_pieces(board_position)
+    red_kings = locate_red_kings(board_position)
     red_simples = []
     for coordinate in red_pieces:
-        U_simples = U_simple_search(coordinate)
+        U_simples = U_simple_search(coordinate, board_position)
         for simple in U_simples:
             red_simples.append(simple)
         if coordinate in red_kings:
-            D_simples = D_simple_search(coordinate)
+            D_simples = D_simple_search(coordinate, board_position)
             for simple in D_simples:
                 red_simples.append(simple)
     return red_simples
 
 # BASIC JUMP SEARCH FUNCTIONS:
 
-def DL_jump_search(jumper_coordinate, previous_color):
-    occupied_squares = locate_occupied_squares()
-    jumper_value = get_square_value(jumper_coordinate)
+def DL_jump_search(jumper_coordinate, previous_color, board_position):
+    occupied_squares = locate_occupied_squares(board_position)
+    jumper_value = get_square_value(jumper_coordinate, board_position)
     if previous_color is None:
         jumper_color = jumper_value & 3
     else:
         jumper_color = previous_color
     jumpee_coordinate = DL_search(jumper_coordinate)
-    jumpee_value = get_square_value(jumpee_coordinate)
+    jumpee_value = get_square_value(jumpee_coordinate, board_position)
     if jumpee_value is not None:
         jumpee_color = jumpee_value & 3
         if jumpee_coordinate in occupied_squares and not (jumper_color & jumpee_color):
             destination_coordinate = DL_search(jumpee_coordinate)
             return (jumper_coordinate, jumpee_coordinate, destination_coordinate)
         
-def DR_jump_search(jumper_coordinate, previous_color):
-    occupied_squares = locate_occupied_squares()
-    jumper_value = get_square_value(jumper_coordinate)
+def DR_jump_search(jumper_coordinate, previous_color, board_position):
+    occupied_squares = locate_occupied_squares(board_position)
+    jumper_value = get_square_value(jumper_coordinate, board_position)
     if previous_color is None:
         jumper_color = jumper_value & 3
     else:
         jumper_color = previous_color        
     jumpee_coordinate = DR_search(jumper_coordinate)
-    jumpee_value = get_square_value(jumpee_coordinate)
+    jumpee_value = get_square_value(jumpee_coordinate, board_position)
     if jumpee_value is not None:
         jumpee_color = jumpee_value & 3
         if jumpee_coordinate in occupied_squares and not (jumper_color & jumpee_color):
             destination_coordinate = DR_search(jumpee_coordinate)
             return (jumper_coordinate, jumpee_coordinate, destination_coordinate)
         
-def UL_jump_search(jumper_coordinate, previous_color):
-    occupied_squares = locate_occupied_squares()
-    jumper_value = get_square_value(jumper_coordinate)
+def UL_jump_search(jumper_coordinate, previous_color, board_position):
+    occupied_squares = locate_occupied_squares(board_position)
+    jumper_value = get_square_value(jumper_coordinate, board_position)
     if previous_color is None:
         jumper_color = jumper_value & 3
     else:
         jumper_color = previous_color
     jumpee_coordinate = UL_search(jumper_coordinate)
-    jumpee_value = get_square_value(jumpee_coordinate)
+    jumpee_value = get_square_value(jumpee_coordinate, board_position)
     if jumpee_value is not None:
         jumpee_color = jumpee_value & 3
         if jumpee_coordinate in occupied_squares and not (jumper_color & jumpee_color):
             destination_coordinate = UL_search(jumpee_coordinate)
             return (jumper_coordinate, jumpee_coordinate, destination_coordinate)
         
-def UR_jump_search(jumper_coordinate, previous_color):
-    occupied_squares = locate_occupied_squares()
-    jumper_value = get_square_value(jumper_coordinate)
+def UR_jump_search(jumper_coordinate, previous_color, board_position):
+    occupied_squares = locate_occupied_squares(board_position)
+    jumper_value = get_square_value(jumper_coordinate, board_position)
     if previous_color is None:
         jumper_color = jumper_value & 3
     else:
         jumper_color = previous_color
     jumpee_coordinate = UR_search(jumper_coordinate)
-    jumpee_value = get_square_value(jumpee_coordinate)
+    jumpee_value = get_square_value(jumpee_coordinate, board_position)
     if jumpee_value is not None:
         jumpee_color = jumpee_value & 3
         if jumpee_coordinate in occupied_squares and not (jumper_color & jumpee_color):
@@ -330,11 +332,11 @@ def create_Path_UR(jumper_coordinate, UR_jump_info, occupied_squares):
             Path_UR.record_capture(UR_jumpee)
             return Path_UR
 
-def create_initial_black_pawn_paths(jumper_coordinate):
-    occupied_squares = locate_occupied_squares()
+def create_initial_black_pawn_paths(jumper_coordinate, board_position):
+    occupied_squares = locate_occupied_squares(board_position)
     initial_black_pawn_paths = []
-    DL_jump_info = DL_jump_search(jumper_coordinate, None)
-    DR_jump_info = DR_jump_search(jumper_coordinate, None)
+    DL_jump_info = DL_jump_search(jumper_coordinate, None, board_position)
+    DR_jump_info = DR_jump_search(jumper_coordinate, None, board_position)
     if DL_jump_info is not None:
         Path_DL = create_Path_DL(jumper_coordinate, DL_jump_info, occupied_squares)
         initial_black_pawn_paths.append(Path_DL)
@@ -343,11 +345,11 @@ def create_initial_black_pawn_paths(jumper_coordinate):
         initial_black_pawn_paths.append(Path_DR)
     return initial_black_pawn_paths
 
-def create_initial_red_pawn_paths(jumper_coordinate):
-    occupied_squares = locate_occupied_squares()
+def create_initial_red_pawn_paths(jumper_coordinate, board_position):
+    occupied_squares = locate_occupied_squares(board_position)
     initial_red_pawn_paths = []
-    UL_jump_info = UL_jump_search(jumper_coordinate, None)
-    UR_jump_info = UR_jump_search(jumper_coordinate, None)
+    UL_jump_info = UL_jump_search(jumper_coordinate, None, board_position)
+    UR_jump_info = UR_jump_search(jumper_coordinate, None, board_position)
     if UL_jump_info is not None:
         Path_UL = create_Path_UL(jumper_coordinate, UL_jump_info, occupied_squares)
         initial_red_pawn_paths.append(Path_UL)
@@ -356,13 +358,13 @@ def create_initial_red_pawn_paths(jumper_coordinate):
         initial_red_pawn_paths.append(Path_UR)
     return initial_red_pawn_paths
 
-def create_initial_king_paths(jumper_coordinate):
-    occupied_squares = locate_occupied_squares()
+def create_initial_king_paths(jumper_coordinate, board_position):
+    occupied_squares = locate_occupied_squares(board_position)
     initial_king_paths = []
-    DL_jump_info = DL_jump_search(jumper_coordinate, None)
-    DR_jump_info = DR_jump_search(jumper_coordinate, None)
-    UL_jump_info = UL_jump_search(jumper_coordinate, None)
-    UR_jump_info = UR_jump_search(jumper_coordinate, None)
+    DL_jump_info = DL_jump_search(jumper_coordinate, None, board_position)
+    DR_jump_info = DR_jump_search(jumper_coordinate, None, board_position)
+    UL_jump_info = UL_jump_search(jumper_coordinate, None, board_position)
+    UR_jump_info = UR_jump_search(jumper_coordinate, None, board_position)
     if DL_jump_info is not None:
         Path_DL = create_Path_DL(jumper_coordinate, DL_jump_info, occupied_squares)
         initial_king_paths.append(Path_DL)
@@ -379,51 +381,51 @@ def create_initial_king_paths(jumper_coordinate):
 
 # JUMP MOVE CALCULATION FUNCTIONS:
 
-def create_black_pawn_path_calculation_info(path, piece_color):
+def create_black_pawn_path_calculation_info(path, piece_color, board_position):
     Path_A = copy.deepcopy(path)
     if Path_A is not None:
-        Path_A_jump_info = DL_jump_search(Path_A.end_coordinate, piece_color)
+        Path_A_jump_info = DL_jump_search(Path_A.end_coordinate, piece_color, board_position)
     else:
         Path_A_jump_info = None
     Path_B = copy.deepcopy(path)
     if Path_B is not None:
-        Path_B_jump_info = DR_jump_search(Path_B.end_coordinate, piece_color)
+        Path_B_jump_info = DR_jump_search(Path_B.end_coordinate, piece_color, board_position)
     else:
         Path_B_jump_info = None
     return (Path_A, Path_A_jump_info, Path_B, Path_B_jump_info)
 
-def create_red_pawn_path_calculation_info(path, piece_color):
+def create_red_pawn_path_calculation_info(path, piece_color, board_position):
     Path_A = copy.deepcopy(path)
     if Path_A is not None:
-        Path_A_jump_info = UL_jump_search(Path_A.end_coordinate, piece_color)
+        Path_A_jump_info = UL_jump_search(Path_A.end_coordinate, piece_color, board_position)
     else:
         Path_A_jump_info = None
     Path_B = copy.deepcopy(path)
     if Path_B is not None:
-        Path_B_jump_info = UR_jump_search(Path_B.end_coordinate, piece_color)
+        Path_B_jump_info = UR_jump_search(Path_B.end_coordinate, piece_color, board_position)
     else:
         Path_B_jump_info = None
     return (Path_A, Path_A_jump_info, Path_B, Path_B_jump_info)
 
-def create_king_path_calculation_info(path, piece_color):
+def create_king_path_calculation_info(path, piece_color, board_position):
     Path_A = copy.deepcopy(path)
     if Path_A is not None:
-        Path_A_jump_info = DL_jump_search(Path_A.end_coordinate, piece_color)
+        Path_A_jump_info = DL_jump_search(Path_A.end_coordinate, piece_color, board_position)
     else:
         Path_A_jump_info = None
     Path_B = copy.deepcopy(path)
     if Path_B is not None:
-        Path_B_jump_info = DR_jump_search(Path_B.end_coordinate, piece_color)
+        Path_B_jump_info = DR_jump_search(Path_B.end_coordinate, piece_color, board_position)
     else:
         Path_B_jump_info = None
     Path_C = copy.deepcopy(path)
     if Path_C is not None:
-        Path_C_jump_info = UL_jump_search(Path_C.end_coordinate, piece_color)
+        Path_C_jump_info = UL_jump_search(Path_C.end_coordinate, piece_color, board_position)
     else:
         Path_C_jump_info = None
     Path_D = copy.deepcopy(path)
     if Path_D is not None:
-        Path_D_jump_info = UR_jump_search(Path_D.end_coordinate, piece_color)
+        Path_D_jump_info = UR_jump_search(Path_D.end_coordinate, piece_color, board_position)
     else:
         Path_D_jump_info = None
     return (Path_A, Path_A_jump_info, Path_B, Path_B_jump_info, Path_C, Path_C_jump_info, Path_D, Path_D_jump_info)
@@ -542,17 +544,17 @@ def create_king_paths_to_process(path_calculation_info, occupied_squares):
             paths_to_process.append(Path_D)
     return paths_to_process
 
-def calculate_black_pawn_paths(jumper_coordinate):
-    occupied_squares = locate_occupied_squares()
-    piece_color = get_square_value(jumper_coordinate) & 3
-    initial_black_pawn_paths = create_initial_black_pawn_paths(jumper_coordinate)
+def calculate_black_pawn_paths(jumper_coordinate, board_position):
+    occupied_squares = locate_occupied_squares(board_position)
+    piece_color = get_square_value(jumper_coordinate, board_position) & 3
+    initial_black_pawn_paths = create_initial_black_pawn_paths(jumper_coordinate, board_position)
     processing = []
     finished_paths = []
     for path in initial_black_pawn_paths:
         processing.append(path)
     while len(processing) > 0:
         for path in processing:
-            path_calculation_info = create_black_pawn_path_calculation_info(path, piece_color)
+            path_calculation_info = create_black_pawn_path_calculation_info(path, piece_color, board_position)
             paths_to_process = create_pawn_paths_to_process(path_calculation_info, occupied_squares)
             if len(paths_to_process) == 0:
                 finished_paths.append(path)
@@ -563,17 +565,17 @@ def calculate_black_pawn_paths(jumper_coordinate):
     finished_black_pawn_paths = finished_paths
     return finished_black_pawn_paths
 
-def calculate_red_pawn_paths(jumper_coordinate):
-    occupied_squares = locate_occupied_squares()
-    piece_color = get_square_value(jumper_coordinate) & 3
-    initial_red_pawn_paths = create_initial_red_pawn_paths(jumper_coordinate)
+def calculate_red_pawn_paths(jumper_coordinate, board_position):
+    occupied_squares = locate_occupied_squares(board_position)
+    piece_color = get_square_value(jumper_coordinate, board_position) & 3
+    initial_red_pawn_paths = create_initial_red_pawn_paths(jumper_coordinate, board_position)
     processing = []
     finished_paths = []
     for path in initial_red_pawn_paths:
         processing.append(path)
     while len(processing) > 0:
         for path in processing:
-            path_calculation_info = create_red_pawn_path_calculation_info(path, piece_color)
+            path_calculation_info = create_red_pawn_path_calculation_info(path, piece_color, board_position)
             paths_to_process = create_pawn_paths_to_process(path_calculation_info, occupied_squares)
             if len(paths_to_process) == 0:
                 finished_paths.append(path)
@@ -584,17 +586,17 @@ def calculate_red_pawn_paths(jumper_coordinate):
     finished_red_pawn_paths = finished_paths
     return finished_red_pawn_paths
 
-def calculate_king_paths(jumper_coordinate):
-    occupied_squares = locate_occupied_squares()
-    piece_color = get_square_value(jumper_coordinate) & 3
-    initial_king_paths = create_initial_king_paths(jumper_coordinate)
+def calculate_king_paths(jumper_coordinate, board_position):
+    occupied_squares = locate_occupied_squares(board_position)
+    piece_color = get_square_value(jumper_coordinate, board_position) & 3
+    initial_king_paths = create_initial_king_paths(jumper_coordinate, board_position)
     processing = []
     finished_paths = []
     for path in initial_king_paths:
         processing.append(path)
     while len(processing) > 0:
         for path in processing:
-            path_calculation_info = create_king_path_calculation_info(path, piece_color)
+            path_calculation_info = create_king_path_calculation_info(path, piece_color, board_position)
             paths_to_process = create_king_paths_to_process(path_calculation_info, occupied_squares)
             if len(paths_to_process) == 0:
                 finished_paths.append(path)
@@ -607,37 +609,37 @@ def calculate_king_paths(jumper_coordinate):
 
 # JUMP MOVE LIST FUNCTIONS:
 
-def list_all_black_jump_moves():
+def list_all_black_jump_moves(board_position):
     black_jump_moves = []
-    black_pawns = locate_black_pawns()
-    black_kings = locate_black_kings()
+    black_pawns = locate_black_pawns(board_position)
+    black_kings = locate_black_kings(board_position)
     for pawn in black_pawns:
         jumper_coordinate = pawn
-        paths = calculate_black_pawn_paths(jumper_coordinate)
+        paths = calculate_black_pawn_paths(jumper_coordinate, board_position)
         for path in paths:
             if path is not None:
                 black_jump_moves.append(path)
     for king in black_kings:
         jumper_coordinate = king
-        paths = calculate_king_paths(jumper_coordinate)
+        paths = calculate_king_paths(jumper_coordinate, board_position)
         for path in paths:
             if path is not None:
                 black_jump_moves.append(path)
     return black_jump_moves
 
-def list_all_red_jump_moves():
+def list_all_red_jump_moves(board_position):
     red_jump_moves = []
-    red_pawns = locate_red_pawns()
-    red_kings = locate_red_kings()
+    red_pawns = locate_red_pawns(board_position)
+    red_kings = locate_red_kings(board_position)
     for pawn in red_pawns:
         jumper_coordinate = pawn
-        paths = calculate_red_pawn_paths(jumper_coordinate)
+        paths = calculate_red_pawn_paths(jumper_coordinate, board_position)
         for path in paths:
             if path is not None:
                 red_jump_moves.append(path)
     for king in red_kings:
         jumper_coordinate = king
-        paths = calculate_king_paths(jumper_coordinate)
+        paths = calculate_king_paths(jumper_coordinate, board_position)
         for path in paths:
             if path is not None:
                 red_jump_moves.append(path)
@@ -645,10 +647,10 @@ def list_all_red_jump_moves():
 
 # LIST ALL POSSIBLE MOVES FUNCTIONS:
 
-def list_all_possible_black_moves():
+def list_all_possible_black_moves(board_position):
     all_possible_black_moves = []
-    black_jump_moves = list_all_black_jump_moves()
-    black_simples = find_black_simples()
+    black_jump_moves = list_all_black_jump_moves(board_position)
+    black_simples = find_black_simples(board_position)
     if len(black_jump_moves) > 0:
         for jump_move in black_jump_moves:
             all_possible_black_moves.append(jump_move)
@@ -657,10 +659,10 @@ def list_all_possible_black_moves():
             all_possible_black_moves.append(simple)
     return all_possible_black_moves
 
-def list_all_possible_red_moves():
+def list_all_possible_red_moves(board_position):
     all_possible_red_moves = []
-    red_jump_moves = list_all_red_jump_moves()
-    red_simples = find_red_simples()
+    red_jump_moves = list_all_red_jump_moves(board_position)
+    red_simples = find_red_simples(board_position)
     if len(red_jump_moves) > 0:
         for jump_move in red_jump_moves:
             all_possible_red_moves.append(jump_move)
@@ -739,8 +741,8 @@ def print_current_position(board_position):
     for row in rows:
         print("\033[0;44m" + row + "\033[0m")
 
-def select_black_move():
-    moves = list_all_possible_black_moves()
+def select_black_move(board_position):
+    moves = list_all_possible_black_moves(board_position)
     count = 1
     total_moves = []
     print("\nMoves for \033[30;107mblack\033[0m:\n")
@@ -764,8 +766,8 @@ def select_black_move():
     selected_move = moves[move_selection_number_integer - 1]
     return selected_move
 
-def select_red_move():
-    moves = list_all_possible_red_moves()
+def select_red_move(board_position):
+    moves = list_all_possible_red_moves(board_position)
     count = 1
     total_moves = []
     print("\nMoves for \033[31;107mred\033[0m:\n")
@@ -789,91 +791,95 @@ def select_red_move():
     selected_move = moves[move_selection_number_integer - 1]
     return selected_move
 
-def update_start_and_end_coordinates(start_coordinate, end_coordinate):
-    piece_value = get_square_value(start_coordinate)
-    destination_value = get_square_value(end_coordinate)
+def get_updated_start_and_end_coordinate_values(start_coordinate, end_coordinate, board_position):
+    piece_value = get_square_value(start_coordinate, board_position)
+    destination_value = get_square_value(end_coordinate, board_position)
     on_back_rank = piece_value & 8
     going_to_back_rank = destination_value & 8
     is_king = piece_value & 4
     if on_back_rank:
-        board_position[start_coordinate - 1] = 8
+        new_start_coordinate_value = 8
     else:
-        board_position[start_coordinate - 1] = 0
+        new_start_coordinate_value = 0
     if going_to_back_rank:
         if is_king:
-            board_position[end_coordinate - 1] = piece_value + 8
+            new_end_coordinate_value = piece_value + 8
         else:
-            board_position[end_coordinate - 1] = piece_value + 12
+            new_end_coordinate_value = piece_value + 12
     else:
         if on_back_rank:
-            board_position[end_coordinate - 1] = piece_value - 8
+            new_end_coordinate_value = piece_value - 8
         else:
-            board_position[end_coordinate - 1] = piece_value
+            new_end_coordinate_value = piece_value
+    return (new_start_coordinate_value, new_end_coordinate_value)
 
-def update_board_position_for_simple_move(selected_move):
+def get_updated_simple_move_values(selected_move, board_position):
     move_coordinates = re.split("[-]", selected_move)
     start_coordinate = int(move_coordinates[0])
     end_coordinate = int(move_coordinates[1])
-    update_start_and_end_coordinates(start_coordinate, end_coordinate)
-    print(f"\nYou have played the simple move {selected_move}\n")
+    new_start_coordinate_value = get_updated_start_and_end_coordinate_values(start_coordinate, end_coordinate, board_position)[0]
+    new_end_coordinate_value = get_updated_start_and_end_coordinate_values(start_coordinate, end_coordinate, board_position)[1]
+    return (start_coordinate, new_start_coordinate_value, end_coordinate, new_end_coordinate_value)
 
-def update_board_position_for_jump_move(selected_move):
+def get_updated_jump_move_values(selected_move, board_position):
     start_coordinate = selected_move.start_coordinate
     end_coordinate = selected_move.end_coordinate
     captures = selected_move.captures
-    update_start_and_end_coordinates(start_coordinate, end_coordinate)
-    for capture in captures:
-        board_position[capture - 1] = 0
-    print(f"\nYou have played the jump move {selected_move}\n")
+    new_start_coordinate_value = get_updated_start_and_end_coordinate_values(start_coordinate, end_coordinate, board_position)[0]
+    new_end_coordinate_value = get_updated_start_and_end_coordinate_values(start_coordinate, end_coordinate, board_position)[1]
+    return (start_coordinate, new_start_coordinate_value, end_coordinate, new_end_coordinate_value, captures)
 
-def play_selected_move(selected_move):
+def play_selected_move(selected_move, board_position):
     if type(selected_move) is str:
-        update_board_position_for_simple_move(selected_move)
+        start_coordinate = get_updated_simple_move_values(selected_move, board_position)[0]
+        new_start_coordinate_value = get_updated_simple_move_values(selected_move, board_position)[1]
+        end_coordinate = get_updated_simple_move_values(selected_move, board_position)[2]
+        new_end_coordinate_value = get_updated_simple_move_values(selected_move, board_position)[3]
+        board_position[start_coordinate - 1] = new_start_coordinate_value
+        board_position[end_coordinate - 1] = new_end_coordinate_value
+        print(f"\nYou have played the simple move {selected_move}\n")
     elif type(selected_move) is Path:
-        update_board_position_for_jump_move(selected_move)
+        start_coordinate = get_updated_jump_move_values(selected_move, board_position)[0]
+        new_start_coordinate_value = get_updated_jump_move_values(selected_move, board_position)[1]
+        end_coordinate = get_updated_jump_move_values(selected_move, board_position)[2]
+        new_end_coordinate_value = get_updated_jump_move_values(selected_move, board_position)[3]
+        captures = get_updated_jump_move_values(selected_move, board_position)[4]
+        board_position[start_coordinate - 1] = new_start_coordinate_value
+        board_position[end_coordinate - 1] = new_end_coordinate_value
+        for capture in captures:
+            board_position[capture - 1] = 0
+        print(f"\nYou have played the jump move {selected_move}\n")
 
 # PLAYABILITY:
-
-def check_for_legal_black_moves():
-    moves = list_all_possible_black_moves()
-    if len(moves) > 0:
-        return True
-    elif len(moves) == 0:
-        return False
-    
-def check_for_legal_red_moves():
-    moves = list_all_possible_red_moves()
-    if len(moves) > 0:
-        return True
-    elif len(moves) == 0:
-        return False
 
 def play_black_turn(board_position):
     print("Turn: \033[30;107mblack\033[0m\n")
     print_current_position(board_position)
-    black_move = select_black_move()
-    play_selected_move(black_move)
+    black_move = select_black_move(board_position)
+    play_selected_move(black_move, board_position)
 
 def play_red_turn(board_position):
     print("Turn: \033[31;107mred\033[0m\n")
     print_current_position(board_position)
-    red_move = select_red_move()
-    play_selected_move(red_move)
+    red_move = select_red_move(board_position)
+    play_selected_move(red_move, board_position)
 
-generate_starting_position()
+def initiate_two_player_checkers_game():
+    board_position = generate_starting_position()
+    while True:
+        any_legal_black_moves = list_all_possible_black_moves(board_position)
+        if any_legal_black_moves:
+            play_black_turn(board_position)
+        else:
+            print_current_position(board_position)
+            print("\nGame over. \033[31;107mRed wins!\033[0m\n")
+            break
+        any_legal_red_moves = list_all_possible_red_moves(board_position)
+        if any_legal_red_moves:
+            play_red_turn(board_position)
+        else:
+            print_current_position(board_position)
+            print("\nGame over. \033[30;107mBlack wins!\033[0m\n")
+            break
 
-while True:
-    any_legal_black_moves = check_for_legal_black_moves()
-    if any_legal_black_moves:
-        play_black_turn(board_position)
-    else:
-        print_current_position(board_position)
-        print("\nGame over. \033[31;107mRed wins!\033[0m\n")
-        break
-    any_legal_red_moves = check_for_legal_red_moves()
-    if any_legal_red_moves:
-        play_red_turn(board_position)
-    else:
-        print_current_position(board_position)
-        print("\nGame over. \033[30;107mBlack wins!\033[0m\n")
-        break
+initiate_two_player_checkers_game()
