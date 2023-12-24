@@ -704,21 +704,21 @@ def translate_position(position):
             case 8:
                 translated_position.append(" ")
             case 1:
-                translated_position.append("o")
+                translated_position.append("\033[30;44mo\033[97;44m")
             case 5:
-                translated_position.append("O")
+                translated_position.append("\033[30;44mO\033[97;44m")
             case 2:
-                translated_position.append("x")
+                translated_position.append("\033[31;44mx\033[97;44m")
             case 6:
-                translated_position.append("X")
+                translated_position.append("\033[31;44mX\033[97;44m")
             case 9:
-                translated_position.append("o")
+                translated_position.append("\033[30;44mo\033[97;44m")
             case 13:
-                translated_position.append("O")
+                translated_position.append("\033[30;44mO\033[97;44m")
             case 10:
-                translated_position.append("x")
+                translated_position.append("\033[31;44mx\033[97;44m")
             case 14:
-                translated_position.append("X")
+                translated_position.append("\033[31;44mX\033[97;44m")
     return translated_position
 
 def create_board_rows(T_board_position):
@@ -737,13 +737,13 @@ def print_current_position(board_position):
     T_board_position = translate_position(board_position)
     rows = create_board_rows(T_board_position)
     for row in rows:
-        print(row)
+        print("\033[0;44m" + row + "\033[0m")
 
 def select_black_move():
     moves = list_all_possible_black_moves()
     count = 1
     total_moves = []
-    print("\nMoves for black:\n")
+    print("\nMoves for \033[30;107mblack\033[0m:\n")
     for move in moves:
         move_string = f"{count}: {move}"
         print(move_string)
@@ -768,7 +768,7 @@ def select_red_move():
     moves = list_all_possible_red_moves()
     count = 1
     total_moves = []
-    print("\nMoves for red:\n")
+    print("\nMoves for \033[31;107mred\033[0m:\n")
     for move in moves:
         move_string = f"{count}: {move}"
         print(move_string)
@@ -849,13 +849,13 @@ def check_for_legal_red_moves():
         return False
 
 def play_black_turn(board_position):
-    print("Turn: black\n")
+    print("Turn: \033[30;107mblack\033[0m\n")
     print_current_position(board_position)
     black_move = select_black_move()
     play_selected_move(black_move)
 
 def play_red_turn(board_position):
-    print("Turn: red\n")
+    print("Turn: \033[31;107mred\033[0m\n")
     print_current_position(board_position)
     red_move = select_red_move()
     play_selected_move(red_move)
@@ -868,12 +868,12 @@ while True:
         play_black_turn(board_position)
     else:
         print_current_position(board_position)
-        print("\nGame over. Red wins!\n")
+        print("\nGame over. \033[31;107mRed wins!\033[0m\n")
         break
     any_legal_red_moves = check_for_legal_red_moves()
     if any_legal_red_moves:
         play_red_turn(board_position)
     else:
         print_current_position(board_position)
-        print("\nGame over. Black wins!\n")
+        print("\nGame over. \033[30;107mBlack wins!\033[0m\n")
         break
