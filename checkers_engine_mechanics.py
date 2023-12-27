@@ -25,6 +25,9 @@ ON_BACK_RANK = 8
 
 # BOARD GENERATION FUNCTIONS:
 
+# The board position is a list of bitmaps, where each list item corresponds to a coordinate
+# on the actual board. Add 1 to the list item index to calculate the corresponding coordinate.
+
 def generate_starting_position():
     board_position = []
     for coordinate in range(1, 5):
@@ -191,8 +194,7 @@ def find_all_simples(piece_color, board_position, search_direction):
     simples = []
     pawn_simples = find_pawn_simples(piece_color, board_position, search_direction)
     king_simples = find_king_simples(piece_color, board_position)
-    simples.extend(pawn_simples)
-    simples.extend(king_simples)
+    simples.extend(pawn_simples + king_simples)
     return simples
 
 # BASIC JUMP SEARCH FUNCTION:
@@ -235,19 +237,25 @@ def create_InitialPath(jumper_coordinate, jump_info, occupied_squares):
         InitialPath.record_capture(jumpee)
         return InitialPath
 
-def create_initial_pawn_paths(jumper_coordinate, board_position, vertical_search_direction):
+def process_jump_info(jumper_coordinate, jump_info, board_position):
     occupied_squares = locate_general_board_objects(IS_OCCUPIED, board_position)
+    if jump_info is not None:
+        destination_coordinate = jump_info[2]
+        if destination_coordinate is not None and destination_coordinate not in occupied_squares:
+            InitialPath = create_InitialPath(jumper_coordinate, jump_info, occupied_squares)
+            return InitialPath
+
+def create_initial_pawn_paths(jumper_coordinate, board_position, vertical_search_direction):
     initial_pawn_paths = []
     L_jump_info = jump_search(jumper_coordinate, None, board_position, vertical_search_direction, LEFT)
     R_jump_info = jump_search(jumper_coordinate, None, board_position, vertical_search_direction, RIGHT)
     jump_info_for_initial_pawn_paths = [L_jump_info, R_jump_info]
     for jump_info in jump_info_for_initial_pawn_paths:
-        if jump_info is not None:
-            initial_pawn_paths.append(create_InitialPath(jumper_coordinate, jump_info, occupied_squares))
+        InitialPath = process_jump_info(jumper_coordinate, jump_info, board_position)
+        if InitialPath is not None: initial_pawn_paths.append(InitialPath)
     return initial_pawn_paths
 
 def create_initial_king_paths(jumper_coordinate, board_position):
-    occupied_squares = locate_general_board_objects(IS_OCCUPIED, board_position)
     initial_king_paths = []
     DL_jump_info = jump_search(jumper_coordinate, None, board_position, "down", LEFT)
     DR_jump_info = jump_search(jumper_coordinate, None, board_position, "down", RIGHT)
@@ -255,198 +263,98 @@ def create_initial_king_paths(jumper_coordinate, board_position):
     UR_jump_info = jump_search(jumper_coordinate, None, board_position, "up", RIGHT)
     jump_info_for_initial_king_paths = [DL_jump_info, DR_jump_info, UL_jump_info, UR_jump_info]
     for jump_info in jump_info_for_initial_king_paths:
-        if jump_info is not None:
-            initial_king_paths.append(create_InitialPath(jumper_coordinate, jump_info, occupied_squares))
+        InitialPath = process_jump_info(jumper_coordinate, jump_info, board_position)
+        if InitialPath is not None: initial_king_paths.append(InitialPath)
     return initial_king_paths
 
 # JUMP MOVE CALCULATION FUNCTIONS:
 
-def create_pawn_path_calculation_info(path, piece_color, board_position, vertical_search_direction):
-    Path_A = copy.deepcopy(path)
-    if Path_A is not None:
-        Path_A_jump_info = jump_search(Path_A.end_coordinate, piece_color, board_position, vertical_search_direction, LEFT)
-    else:
-        Path_A_jump_info = None
-    Path_B = copy.deepcopy(path)
-    if Path_B is not None:
-        Path_B_jump_info = jump_search(Path_A.end_coordinate, piece_color, board_position, vertical_search_direction, RIGHT)
-    else:
-        Path_B_jump_info = None
-    return (Path_A, Path_A_jump_info, Path_B, Path_B_jump_info)
+def create_PawnPath_jump_branch_info(CurrentPath, piece_color, board_position, vertical_search_direction):
+    if CurrentPath is not None:
+        jump_branch_A_info = jump_search(CurrentPath.end_coordinate, piece_color, board_position,
+                                        vertical_search_direction, LEFT)
+        jump_branch_B_info = jump_search(CurrentPath.end_coordinate, piece_color, board_position,
+                                       vertical_search_direction, RIGHT)
+        return (jump_branch_A_info, jump_branch_B_info)
 
-def create_king_path_calculation_info(path, piece_color, board_position):
-    Path_A = copy.deepcopy(path)
-    if Path_A is not None:
-        Path_A_jump_info = jump_search(Path_A.end_coordinate, piece_color, board_position, "down", LEFT)
-    else:
-        Path_A_jump_info = None
-    Path_B = copy.deepcopy(path)
-    if Path_B is not None:
-        Path_B_jump_info = jump_search(Path_A.end_coordinate, piece_color, board_position, "down", RIGHT)
-    else:
-        Path_B_jump_info = None
-    Path_C = copy.deepcopy(path)
-    if Path_C is not None:
-        Path_C_jump_info = jump_search(Path_A.end_coordinate, piece_color, board_position, "up", LEFT)
-    else:
-        Path_C_jump_info = None
-    Path_D = copy.deepcopy(path)
-    if Path_D is not None:
-        Path_D_jump_info = jump_search(Path_A.end_coordinate, piece_color, board_position, "up", RIGHT)
-    else:
-        Path_D_jump_info = None
-    return (Path_A, Path_A_jump_info, Path_B, Path_B_jump_info, Path_C, Path_C_jump_info, Path_D, Path_D_jump_info)
+def create_KingPath_jump_branch_info(CurrentPath, piece_color, board_position):
+    if CurrentPath is not None:
+        jump_branch_A_info = jump_search(CurrentPath.end_coordinate, piece_color, board_position,
+                                        "down", LEFT)
+        jump_branch_B_info = jump_search(CurrentPath.end_coordinate, piece_color, board_position,
+                                       "down", RIGHT)
+        jump_branch_C_info = jump_search(CurrentPath.end_coordinate, piece_color, board_position,
+                                        "up", LEFT)
+        jump_branch_D_info = jump_search(CurrentPath.end_coordinate, piece_color, board_position,
+                                       "up", RIGHT)
+        return (jump_branch_A_info, jump_branch_B_info, jump_branch_C_info, jump_branch_D_info)
 
-def update_pawn_Path_A(path_calculation_info, occupied_squares):
-    Path_A = path_calculation_info[0]
-    Path_A_jump_info = path_calculation_info[1]
-    Path_A_jumpee = Path_A_jump_info[1]
-    Path_A_destination = Path_A_jump_info[2]
-    if Path_A_destination is not None:
-        if Path_A_destination not in occupied_squares:
-            Path_A.record_capture(Path_A_jumpee)
-            Path_A.end_coordinate = Path_A_destination
-            return Path_A
+def update_CurrentPawnPath(CurrentPath, jump_branch_info, occupied_squares):
+    new_paths = []
+    Path_A_jump_info = jump_branch_info[0]
+    Path_B_jump_info = jump_branch_info[1]
+    potential_branches = [Path_A_jump_info, Path_B_jump_info]
+    for jump_branch in potential_branches:
+        if jump_branch is not None:
+            jumpee = jump_branch[1]
+            destination = jump_branch[2]
+            if destination is not None:
+                if destination not in occupied_squares:
+                    NewPath = copy.deepcopy(CurrentPath)
+                    NewPath.record_capture(jumpee)
+                    NewPath.end_coordinate = destination
+                    new_paths.append(NewPath)
+    return new_paths
 
-def update_pawn_Path_B(path_calculation_info, occupied_squares):
-    Path_B = path_calculation_info[2]
-    Path_B_jump_info = path_calculation_info[3]
-    Path_B_jumpee = Path_B_jump_info[1]
-    Path_B_destination = Path_B_jump_info[2]
-    if Path_B_destination is not None:
-        if Path_B_destination not in occupied_squares:
-            Path_B.record_capture(Path_B_jumpee)
-            Path_B.end_coordinate = Path_B_destination
-            return Path_B
+def update_CurrentKingPath(CurrentPath, jump_branch_info, occupied_squares):
+    new_paths = []
+    Path_A_jump_info = jump_branch_info[0]
+    Path_B_jump_info = jump_branch_info[1]
+    Path_C_jump_info = jump_branch_info[2]
+    Path_D_jump_info = jump_branch_info[3]
+    potential_branches = [Path_A_jump_info, Path_B_jump_info, Path_C_jump_info, Path_D_jump_info]
+    previous_captures = CurrentPath.captures
+    for jump_branch in potential_branches:
+        if jump_branch is not None:
+            jumpee = jump_branch[1]
+            destination = jump_branch[2]
+            if destination is not None and jumpee not in previous_captures:
+                if destination not in occupied_squares or destination == CurrentPath.start_coordinate:
+                    NewPath = copy.deepcopy(CurrentPath)
+                    NewPath.record_capture(jumpee)
+                    NewPath.end_coordinate = destination
+                    new_paths.append(NewPath)
+    return new_paths
 
-def update_king_Path_A(path_calculation_info, occupied_squares):
-    Path_A = path_calculation_info[0]
-    Path_A_jump_info = path_calculation_info[1]
-    Path_A_jumpee = Path_A_jump_info[1]
-    Path_A_destination = Path_A_jump_info[2]
-    previous_captures = Path_A.captures
-    if Path_A_destination is not None and Path_A_jumpee not in previous_captures:
-        if Path_A_destination not in occupied_squares or Path_A_destination == Path_A.start_coordinate:
-            Path_A.record_capture(Path_A_jumpee)
-            Path_A.end_coordinate = Path_A_destination
-            return Path_A
-            
-def update_king_Path_B(path_calculation_info, occupied_squares):
-    Path_B = path_calculation_info[2]
-    Path_B_jump_info = path_calculation_info[3]
-    Path_B_jumpee = Path_B_jump_info[1]
-    Path_B_destination = Path_B_jump_info[2]
-    previous_captures = Path_B.captures
-    if Path_B_destination is not None and Path_B_jumpee not in previous_captures:
-        if Path_B_destination not in occupied_squares or Path_B_destination == Path_B.start_coordinate:
-            Path_B.record_capture(Path_B_jumpee)
-            Path_B.end_coordinate = Path_B_destination
-            return Path_B
-
-def update_king_Path_C(path_calculation_info, occupied_squares):
-    Path_C = path_calculation_info[4]
-    Path_C_jump_info = path_calculation_info[5]
-    Path_C_jumpee = Path_C_jump_info[1]
-    Path_C_destination = Path_C_jump_info[2]
-    previous_captures = Path_C.captures
-    if Path_C_destination is not None and Path_C_jumpee not in previous_captures:
-        if Path_C_destination not in occupied_squares or Path_C_destination == Path_C.start_coordinate:
-            Path_C.record_capture(Path_C_jumpee)
-            Path_C.end_coordinate = Path_C_destination
-            return Path_C
-
-def update_king_Path_D(path_calculation_info, occupied_squares):
-    Path_D = path_calculation_info[6]
-    Path_D_jump_info = path_calculation_info[7]
-    Path_D_jumpee = Path_D_jump_info[1]
-    Path_D_destination = Path_D_jump_info[2]
-    previous_captures = Path_D.captures
-    if Path_D_destination is not None and Path_D_jumpee not in previous_captures:
-        if Path_D_destination not in occupied_squares or Path_D_destination == Path_D.start_coordinate:
-            Path_D.record_capture(Path_D_jumpee)
-            Path_D.end_coordinate = Path_D_destination
-            return Path_D
-
-def create_pawn_paths_to_process(path_calculation_info, occupied_squares):
-    paths_to_process = []
-    Path_A = path_calculation_info[0]
-    Path_A_jump_info = path_calculation_info[1]
-    Path_B = path_calculation_info[2]
-    Path_B_jump_info = path_calculation_info[3]
-    if Path_A_jump_info is not None:
-        Path_A = update_pawn_Path_A(path_calculation_info, occupied_squares)
-        if Path_A is not None:
-            paths_to_process.append(Path_A)
-    if Path_B_jump_info is not None:
-        Path_B = update_pawn_Path_B(path_calculation_info, occupied_squares)
-        if Path_B is not None:
-            paths_to_process.append(Path_B)
-    return paths_to_process
-
-def create_king_paths_to_process(path_calculation_info, occupied_squares):
-    paths_to_process = []
-    Path_A = path_calculation_info[0]
-    Path_A_jump_info = path_calculation_info[1]
-    Path_B = path_calculation_info[2]
-    Path_B_jump_info = path_calculation_info[3]
-    Path_C = path_calculation_info[4]
-    Path_C_jump_info = path_calculation_info[5]
-    Path_D = path_calculation_info[6]
-    Path_D_jump_info = path_calculation_info[7]
-    if Path_A_jump_info is not None:
-        Path_A = update_king_Path_A(path_calculation_info, occupied_squares)
-        if Path_A is not None:
-            paths_to_process.append(Path_A)
-    if Path_B_jump_info is not None:
-        Path_B = update_king_Path_B(path_calculation_info, occupied_squares)
-        if Path_B is not None:
-            paths_to_process.append(Path_B)
-    if Path_C_jump_info is not None:
-        Path_C = update_king_Path_C(path_calculation_info, occupied_squares)
-        if Path_C is not None:
-            paths_to_process.append(Path_C)
-    if Path_D_jump_info is not None:
-        Path_D = update_king_Path_D(path_calculation_info, occupied_squares)
-        if Path_D is not None:
-            paths_to_process.append(Path_D)
-    return paths_to_process
-
-def calculate_pawn_paths(jumper_coordinate, board_position, piece_color, vertical_search_direction):
+def calculate_PawnPaths(jumper_coordinate, board_position, piece_color, vertical_search_direction):
     occupied_squares = locate_general_board_objects(IS_OCCUPIED, board_position)
-    initial_pawn_paths = create_initial_pawn_paths(jumper_coordinate, board_position, vertical_search_direction)
-    processing = []
+    processing = create_initial_pawn_paths(jumper_coordinate, board_position, vertical_search_direction)
     finished_paths = []
-    for path in initial_pawn_paths:
-        processing.append(path)
     while len(processing) > 0:
-        for path in processing:
-            path_calculation_info = create_pawn_path_calculation_info(path, piece_color, board_position, vertical_search_direction)
-            paths_to_process = create_pawn_paths_to_process(path_calculation_info, occupied_squares)
+        for CurrentPath in processing:
+            jump_branch_info = create_PawnPath_jump_branch_info(CurrentPath, piece_color, board_position,
+                                                                vertical_search_direction)
+            paths_to_process = update_CurrentPawnPath(CurrentPath, jump_branch_info, occupied_squares)
             if len(paths_to_process) == 0:
-                finished_paths.append(path)
+                finished_paths.append(CurrentPath)
             else:
-                for updated_paths in paths_to_process:
-                    processing.append(updated_paths)
-            processing.remove(path)
+                processing.extend(paths_to_process)
+            processing.remove(CurrentPath)
     finished_pawn_paths = finished_paths
     return finished_pawn_paths
 
-def calculate_king_paths(jumper_coordinate, board_position, piece_color):
+def calculate_KingPaths(jumper_coordinate, board_position, piece_color):
     occupied_squares = locate_general_board_objects(IS_OCCUPIED, board_position)
-    initial_king_paths = create_initial_king_paths(jumper_coordinate, board_position)
-    processing = []
+    processing = create_initial_king_paths(jumper_coordinate, board_position)
     finished_paths = []
-    for path in initial_king_paths:
-        processing.append(path)
     while len(processing) > 0:
         for path in processing:
-            path_calculation_info = create_king_path_calculation_info(path, piece_color, board_position)
-            paths_to_process = create_king_paths_to_process(path_calculation_info, occupied_squares)
+            path_calculation_info = create_KingPath_jump_branch_info(path, piece_color, board_position)
+            paths_to_process = update_CurrentKingPath(path, path_calculation_info, occupied_squares)
             if len(paths_to_process) == 0:
                 finished_paths.append(path)
             else:
-                for updated_paths in paths_to_process:
-                    processing.append(updated_paths)
+                processing.extend(paths_to_process)
             processing.remove(path)
     finished_king_paths = finished_paths
     return finished_king_paths
@@ -457,7 +365,7 @@ def list_all_possible_pawn_paths(piece_color, board_position, vertical_search_di
     possible_pawn_paths = []
     pawns = locate_specific_board_objects(piece_color, board_position)
     for pawn in pawns:
-        pawn_paths = calculate_pawn_paths(pawn, board_position, piece_color, vertical_search_direction)
+        pawn_paths = calculate_PawnPaths(pawn, board_position, piece_color, vertical_search_direction)
         if len(pawn_paths) > 0: possible_pawn_paths.extend(pawn_paths)
     return possible_pawn_paths
 
@@ -466,7 +374,7 @@ def list_all_possible_king_paths(piece_color, board_position):
     king_value = piece_color + IS_KING
     kings = locate_specific_board_objects(king_value, board_position)
     for king in kings:
-        king_paths = calculate_king_paths(king, board_position, piece_color)
+        king_paths = calculate_KingPaths(king, board_position, piece_color)
         if len(king_paths) > 0: possible_king_paths.extend(king_paths)
     return possible_king_paths
 
@@ -492,9 +400,9 @@ def list_all_possible_moves(board_position, piece_color, vertical_search_directi
 
 # USER INTERFACE CODE:
 
-# "o" = black pawn, "O" = black king, "x" = red pawn, "X" = red king, " " = empty square, "=" = non-coordinate square
-
-
+# " " = empty square (0 & 8)
+# "o" = black pawn (1 & 9), "O" = black king (5 & 13),
+# "x" = red pawn (2 & 6), "X" = red king (10 & 14),
 
 def translate_position(board_position):
     translated_position = []
@@ -502,27 +410,28 @@ def translate_position(board_position):
         match square_value:
             case 0:
                 translated_position.append(" ")
-            case 1:
-                translated_position.append("\033[30;44mo\033[97;44m")
-            case 2:
-                translated_position.append("\033[31;44mx\033[97;44m")
-            case 5:
-                translated_position.append("\033[30;44mO\033[97;44m")
-            case 6:
-                translated_position.append("\033[31;44mX\033[97;44m")
             case 8:
                 translated_position.append(" ")
+            case 1:
+                translated_position.append("\033[30;44mo\033[97;44m")
             case 9:
                 translated_position.append("\033[30;44mo\033[97;44m")
-            case 10:
-                translated_position.append("\033[31;44mx\033[97;44m")
+            case 5:
+                translated_position.append("\033[30;44mO\033[97;44m")
             case 13:
                 translated_position.append("\033[30;44mO\033[97;44m")
+            case 2:
+                translated_position.append("\033[31;44mx\033[97;44m")
+            case 6:
+                translated_position.append("\033[31;44mX\033[97;44m")
+            case 10:
+                translated_position.append("\033[31;44mx\033[97;44m")
             case 14:
                 translated_position.append("\033[31;44mX\033[97;44m")
     return translated_position
 
 # The "T_" prefix indicates that the board position has been translated to a printable format.
+# "=" = non-coordinate square
 
 def create_board_rows(T_board_position):
     row_1 = f"|=|{T_board_position[0]}|=|{T_board_position[1]}|=|{T_board_position[2]}|=|{T_board_position[3]}|"
@@ -541,6 +450,8 @@ def print_current_position(board_position):
     rows = create_board_rows(T_board_position)
     for row in rows:
         print("\033[0;44m" + row + "\033[0m")
+
+# MOVE SELECTION FUNCTIONS:
 
 def select_move_color(piece_color, board_position):
     if piece_color is BLACK_PIECE:
@@ -564,7 +475,9 @@ def select_move(piece_color, board_position):
     count = list_countable_moves(moves)
     while True:
         move_selection_number_string = input("\nSelect a move by entering the move number and pressing 'Enter': ")
-        if not move_selection_number_string.isnumeric():
+        if move_selection_number_string == "Q":
+            quit()
+        elif not move_selection_number_string.isnumeric():
             print("\nInvalid move. Please try again.")
             continue
         else:
@@ -576,6 +489,8 @@ def select_move(piece_color, board_position):
                 break
     selected_move = moves[move_selection_number_integer - 1]
     return selected_move
+
+# BOARD UPDATE FUNCTIONS:
 
 def update_start_and_end_coordinate_values(start_coordinate, end_coordinate, board_position):
     piece_value = get_square_value(start_coordinate, board_position)
@@ -611,6 +526,8 @@ def update_board_for_jump_move(selected_move, board_position):
     update_start_and_end_coordinate_values(start_coordinate, end_coordinate, board_position)
     for capture in captures: board_position[capture - 1] = EMPTY_SQUARE
 
+# PLAYABILITY FUNCTIONS:
+
 def play_selected_move(selected_move, board_position):
     if type(selected_move) is str:
         update_board_for_simple_move(selected_move, board_position)
@@ -618,8 +535,6 @@ def play_selected_move(selected_move, board_position):
     elif type(selected_move) is Path:
         update_board_for_jump_move(selected_move, board_position)
         print(f"\nYou have played the jump move {selected_move}\n")
-
-# PLAYABILITY:
 
 def play_black_turn(board_position):
     black_move = select_move(BLACK_PIECE, board_position)
@@ -629,8 +544,14 @@ def play_red_turn(board_position):
     red_move = select_move(RED_PIECE, board_position)
     play_selected_move(red_move, board_position)
 
+def generate_custom_position():
+    custom_board_position = generate_empty_board()
+    # custom_board_position[0] = EMPTY_SQUARE
+    return custom_board_position 
+
 def initiate_two_player_checkers_game():
     board_position = generate_starting_position()
+    # board_position = generate_custom_position()
     while True:
         any_legal_black_moves = list_all_possible_moves(board_position, BLACK_PIECE, "down")
         if any_legal_black_moves:
