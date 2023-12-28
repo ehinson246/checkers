@@ -536,40 +536,34 @@ def play_selected_move(selected_move, board_position):
         update_board_for_jump_move(selected_move, board_position)
         print(f"\nYou have played the jump move {selected_move}\n")
 
-def play_black_turn(board_position):
-    black_move = select_move(BLACK_PIECE, board_position)
-    play_selected_move(black_move, board_position)
-
-def play_red_turn(board_position):
-    red_move = select_move(RED_PIECE, board_position)
-    play_selected_move(red_move, board_position)
+def play_turn(piece_color, board_position):
+    move = select_move(piece_color, board_position)
+    play_selected_move(move, board_position)
 
 def generate_custom_position():
     custom_board_position = generate_empty_board()
     # custom_board_position[0] = EMPTY_SQUARE
     return custom_board_position 
 
+TURN_TRACKER = {
+    0: (RED_PIECE, "up", "[31;107m", "red", "[30;107m", "Black Wins!"),
+    1: (BLACK_PIECE, "down", "[30;107m", "black", "[31;107m", "Red Wins!")
+}
+
 def initiate_two_player_checkers_game():
     board_position = generate_starting_position()
     # board_position = generate_custom_position()
+    whose_turn = 1
     while True:
-        any_legal_black_moves = list_all_possible_moves(board_position, BLACK_PIECE, "down")
-        if any_legal_black_moves:
-            print("Turn: \033[30;107mblack\033[0m\n")
+        any_legal_moves = list_all_possible_moves(board_position, TURN_TRACKER[whose_turn][0], TURN_TRACKER[whose_turn][1])
+        if any_legal_moves:
+            print(f"Turn: \033{TURN_TRACKER[whose_turn][2]}{TURN_TRACKER[whose_turn][3]}\033[0m\n")
             print_current_position(board_position)
-            play_black_turn(board_position)
+            play_turn(TURN_TRACKER[whose_turn][0], board_position)
         else:
             print_current_position(board_position)
-            print("\nGame over. \033[31;107mRed wins!\033[0m\n")
+            print(f"\nGame over. \033{TURN_TRACKER[whose_turn][4]}{TURN_TRACKER[whose_turn][5]}\033[0m\n")
             break
-        any_legal_red_moves = list_all_possible_moves(board_position, RED_PIECE, "up")
-        if any_legal_red_moves:
-            print("Turn: \033[31;107mred\033[0m\n")
-            print_current_position(board_position)
-            play_red_turn(board_position)
-        else:
-            print_current_position(board_position)
-            print("\nGame over. \033[30;107mBlack wins!\033[0m\n")
-            break
+        whose_turn = (whose_turn + 1) % 2
 
 initiate_two_player_checkers_game()
