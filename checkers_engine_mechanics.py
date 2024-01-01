@@ -210,8 +210,8 @@ def jump_search(jumper_coordinate, board_position, jumper_color,
         SEARCHERS[vertical_search_direction][horizontal_search_direction](jumper_coordinate)
     if jumpee_coordinate is not None and jumpee_coordinate in occupied_squares:
         jumpee_value = get_square_value(jumpee_coordinate, board_position)
-        jumpee_can_be_captured = jumpee_value & ~jumper_color
-        if jumpee_can_be_captured:
+        jumpee_color = jumpee_value & IS_OCCUPIED
+        if jumper_color != jumpee_color:
             destination_coordinate = \
                 SEARCHERS[vertical_search_direction][horizontal_search_direction](jumpee_coordinate)
             jump_info = (jumpee_coordinate, destination_coordinate)
@@ -574,8 +574,11 @@ def play_turn(board_position, piece_color):
 
 def generate_custom_position():
     custom_board_position = generate_empty_board()
-    # custom_board_position[0] = EMPTY_SQUARE
-    return custom_board_position 
+    # custom_board_position[16] = RED_KING
+    # custom_board_position[23] = BLACK_KING
+    # custom_board_position[29] = BLACK_KING + ON_BACK_RANK
+    # custom_board_position[30] = BLACK_KING + ON_BACK_RANK
+    return custom_board_position
 
 TURN_TRACKER = {
     0: (RED_PIECE, "up", "[31;107m", "red", "[30;107m", "Black wins!"),
@@ -602,4 +605,112 @@ def initiate_two_player_checkers_game():
             break
         whose_turn = (whose_turn + 1) % 2
 
-initiate_two_player_checkers_game()
+# initiate_two_player_checkers_game()
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+ # # # # # # POSITION EVALUATION FUNCTIONS # # # # # #  
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+
+# regarding variable prefixes:
+
+# F_ = friendly
+# E_ = enemy
+
+KING_WEIGHT = 3
+
+def get_material_count(board_position, piece_color):
+    king_piece_value = piece_color + IS_KING
+    pawn_count = len(locate_specific_board_objects(board_position, piece_color))
+    king_count = KING_WEIGHT * len(locate_specific_board_objects(board_position, king_piece_value))
+    material_count = pawn_count + king_count
+    return material_count
+
+def evaluate_material_balance(board_position, F_piece_color, E_piece_color):
+    F_material_count = get_material_count(board_position, F_piece_color)
+    E_material_count = get_material_count(board_position, E_piece_color)
+    material_balance = F_material_count - E_material_count
+    return material_balance
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+ # # # # # # # # MOVE SEARCH FUNCTIONS # # # # # # # #  
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+
+def update_board_position(selected_move, board_position):
+    if type(selected_move) is str:
+        update_board_for_simple_move(selected_move, board_position)
+    elif type(selected_move) is Path:
+        update_board_for_jump_move(selected_move, board_position)
+
+def minmax_best_move_search(principal_board, F_piece_color, E_piece_color):
+    if F_piece_color is BLACK_PIECE:
+        F_vertical_search_direction = "down"
+        E_vertical_search_direction = "up"
+    elif F_piece_color is RED_PIECE:
+        F_vertical_search_direction = "up"
+        E_vertical_search_direction = "down"
+    best_move = None
+    branch_evals = []
+    best_eval = -1000
+    F_legal_moves = list_all_possible_moves(principal_board, F_piece_color, F_vertical_search_direction)
+    for F_move in F_legal_moves:
+        leaf_evals = []
+        branch_board = principal_board.copy()
+        update_board_position(F_move, branch_board)
+        E_legal_moves = list_all_possible_moves(branch_board, E_piece_color, E_vertical_search_direction)
+        for E_move in E_legal_moves:
+            leaf_board = branch_board.copy()
+            update_board_position(E_move, leaf_board)
+            resulting_material_balance = evaluate_material_balance(leaf_board, F_piece_color, E_piece_color)
+            leaf_eval = resulting_material_balance
+            leaf_evals.append(leaf_eval)
+        worst_eval = 1000
+        for eval in leaf_evals:
+            if eval < worst_eval:
+                worst_eval = eval
+        branch_eval = (F_move, worst_eval)
+        branch_evals.append(branch_eval)
+        # print("==========")
+        # print(F_move)
+        # for move in E_legal_moves:
+        #     print(move)
+    for eval in branch_evals:
+        if eval[1] > best_eval:
+            best_eval = eval[1]
+            best_move = eval[0]
+    return (best_move, best_eval)
+    
+def initiate_one_player_checkers_game_vs_engine():
+    board_position = generate_starting_position()
+    # board_position = generate_custom_position()
+    whose_turn = 1
+    while True:
+        any_legal_moves = list_all_possible_moves(board_position,
+                                                  BLACK_PIECE,
+                                                  "down")
+        if any_legal_moves:
+            print(f"Turn: \033[30;107mblack\033[0m\n")
+            print_current_position(board_position)
+            play_turn(board_position, BLACK_PIECE)
+        else:
+            print_current_position(board_position)
+            print(f"\nGame over. \033[31;107mRed wins!\033[0m\n")
+            break
+        any_legal_moves = list_all_possible_moves(board_position,
+                                                  RED_PIECE,
+                                                  "up")
+        if any_legal_moves:
+            print(f"Turn: \033[31;107mred\033[0m\n")
+            print_current_position(board_position)
+            move_search_info = minmax_best_move_search(board_position, RED_PIECE, BLACK_PIECE)
+            computer_move = move_search_info[0]
+            engine_eval = move_search_info[1]
+            print(f"\nComputer evaluates the position as {engine_eval}\n")
+            print(f"Computer plays the move {computer_move}\n")
+            update_board_position(computer_move, board_position)
+        else:
+            print_current_position(board_position)
+            print(f"\nGame over. \033[30;107mBlack wins!\033[0m\n")
+            break
+        whose_turn = (whose_turn + 1) % 2
+
+initiate_one_player_checkers_game_vs_engine()
